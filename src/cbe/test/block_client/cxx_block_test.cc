@@ -1,6 +1,6 @@
 #include <cxx_block_test.h>
 
-Cxx_block_test::Cxx_block_test(Block::Connection &conn) : _block(&conn)
+Cxx_block_test::Cxx_block_test() : _block()
 { }
 
 void Cxx_block_test::run()

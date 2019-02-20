@@ -1,13 +1,20 @@
 
 #include <block.h>
 
+#include <base/heap.h>
 #include <block_session/connection.h>
 #include <util/string.h>
+#include <util/reconstructible.h>
 #include <ada/exception.h>
 
-inline Block::Connection *blk(void *device)
+extern Genode::Env *component_env __attribute__((weak));
+Genode::Constructible<Genode::Heap> _heap;
+Genode::Constructible<Genode::Allocator_avl> _alloc;
+Genode::Constructible<Block::Connection> _block_connection;
+
+inline Block::Connection *blk(Genode::uint32_t device)
 {
-    return static_cast<Block::Connection *>(device);
+    return &(*_block_connection);
 }
 
 struct Genode_Packet
@@ -24,12 +31,19 @@ struct Genode_Packet
     }
 };
 
-Block::Client::Client(void *device)
+Block::Client::Client(const char *device)
 {
-    if(device){
-        _device = device;
+    const char default_device[] = "";
+    if(component_env){
+        _heap.construct(component_env->ram(), component_env->rm());
+        _alloc.construct(&*_heap);
+        _block_connection.construct(
+                *component_env,
+                &*_alloc,
+                128 * 1024,
+                device ? device : default_device);
     }else{
-        throw Ada::Exception::Null_Access_Parameter();
+        Genode::error("Failed to construct block session");
     }
 }
 

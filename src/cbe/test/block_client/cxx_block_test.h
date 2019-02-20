@@ -9,6 +9,6 @@ class Cxx_block_test
         Block::Client _block;
         char _buffer[Block::Client::BLOCK_SIZE];
     public:
-        Cxx_block_test(Block::Connection &conn);
+        Cxx_block_test();
         void run();
 };

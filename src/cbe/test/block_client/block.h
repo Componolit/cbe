@@ -9,7 +9,7 @@ namespace Block
     class Client
     {
         private:
-            void *_device;
+            Genode::uint32_t _device;
 
         public:
 
@@ -25,7 +25,7 @@ namespace Block
                 bool success;
             };
 
-            Client(void *device);
+            Client(const char *device = nullptr);
             void submit_read(Request &req);
             void submit_sync(Request &req);
             void submit_write(
