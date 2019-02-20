@@ -1,27 +1,17 @@
 
 #include <base/component.h>
-#include <base/heap.h>
-#include <block_session/connection.h>
-#include <util/string.h>
 
 #include <block.h>
 #include <cxx_block_test.h>
 
+Genode::Env *component_env;
+
 struct Main
 {
-    Genode::Env &_env;
-    Genode::Heap _heap;
-    Genode::Allocator_avl _alloc;
-    Block::Connection _block_connection;
-
     Cxx_block_test _cxx_block;
 
     Main(Genode::Env &env) :
-        _env(env),
-        _heap(env.ram(), env.rm()),
-        _alloc(&_heap),
-        _block_connection(env, &_alloc),
-        _cxx_block(_block_connection)
+        _cxx_block()
     {
         _cxx_block.run();
     }
@@ -29,5 +19,7 @@ struct Main
 
 void Component::construct(Genode::Env &env)
 {
+    component_env = &env;
+    env.exec_static_constructors();
     static Main main(env);
 }
