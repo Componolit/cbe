@@ -9,7 +9,7 @@ namespace Block
     class Client
     {
         private:
-            Genode::uint32_t _device;
+            Genode::uint64_t _device;
 
         public:
 
@@ -25,20 +25,22 @@ namespace Block
                 bool success;
             };
 
-            Client(const char *device = nullptr);
-            void submit_read(Request &req);
-            void submit_sync(Request &req);
+            Client();
+            void initialize(const char *device = nullptr);
+            void finalize();
+            void submit_read(Request req);
+            void submit_sync(Request req);
             void submit_write(
-                    Request &req,
+                    Request req,
                     Genode::uint8_t *data,
                     Genode::uint64_t length);
             Request next();
             void acknowledge_read(
-                    Request &req,
+                    Request req,
                     Genode::uint8_t *data,
                     Genode::uint64_t length);
-            void acknowledge_sync(Request &req);
-            void acknowledge_write(Request &req);
+            void acknowledge_sync(Request req);
+            void acknowledge_write(Request req);
     };
 }
 

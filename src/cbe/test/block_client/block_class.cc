@@ -7,14 +7,25 @@
 #include <util/reconstructible.h>
 #include <ada/exception.h>
 
-extern Genode::Env *component_env __attribute__((weak));
-Genode::Constructible<Genode::Heap> _heap;
-Genode::Constructible<Genode::Allocator_avl> _alloc;
-Genode::Constructible<Block::Connection> _block_connection;
-
-inline Block::Connection *blk(Genode::uint32_t device)
+extern "C"
 {
-    return &(*_block_connection);
+    void __gnat_rcheck_CE_Access_Check()
+    {
+        throw Ada::Exception::Access_Check();
+    }
+}
+
+Genode::Env *component_env __attribute__((weak)) = nullptr;
+Genode::Constructible<Genode::Sliced_heap> _heap;
+Genode::Constructible<Genode::Allocator_avl> _alloc;
+
+inline Block::Connection *blk(Genode::uint64_t device)
+{
+    if (device){
+        return reinterpret_cast<Block::Connection *>(device);
+    }else{
+        throw Ada::Exception::Access_Check();
+    }
 }
 
 struct Genode_Packet
@@ -31,23 +42,33 @@ struct Genode_Packet
     }
 };
 
-Block::Client::Client(const char *device)
+Block::Client::Client()
+{
+    _device = 0;
+}
+
+void Block::Client::initialize(const char *device)
 {
     const char default_device[] = "";
     if(component_env){
         _heap.construct(component_env->ram(), component_env->rm());
         _alloc.construct(&*_heap);
-        _block_connection.construct(
+        _device = reinterpret_cast<Genode::uint64_t>(new (*_heap) Block::Connection(
                 *component_env,
                 &*_alloc,
                 128 * 1024,
-                device ? device : default_device);
+                device ? device : default_device));
     }else{
         Genode::error("Failed to construct block session");
     }
 }
 
-void Block::Client::submit_read(Block::Client::Request &req)
+void Block::Client::finalize()
+{
+    Genode::destroy (*_heap, reinterpret_cast<Block::Connection *>(_device));
+}
+
+void Block::Client::submit_read(Block::Client::Request req)
 {
     Block::Packet_descriptor packet(
             blk(_device)->dma_alloc_packet(BLOCK_SIZE * req.length),
@@ -57,7 +78,7 @@ void Block::Client::submit_read(Block::Client::Request &req)
     Genode_Packet(packet.offset(), packet.size()).uid(req.uid);
 }
 
-void Block::Client::submit_sync(Block::Client::Request &req)
+void Block::Client::submit_sync(Block::Client::Request req)
 {
     Block::Packet_descriptor packet(
             blk(_device)->dma_alloc_packet(BLOCK_SIZE * req.length),
@@ -68,7 +89,7 @@ void Block::Client::submit_sync(Block::Client::Request &req)
 }
 
 void Block::Client::submit_write(
-        Block::Client::Request &req,
+        Block::Client::Request req,
         Genode::uint8_t *data,
         Genode::uint64_t length)
 {
@@ -101,7 +122,7 @@ Block::Client::Request Block::Client::next()
 }
 
 void Block::Client::acknowledge_read(
-        Block::Client::Request &req,
+        Block::Client::Request req,
         Genode::uint8_t *data,
         Genode::uint64_t length)
 {
@@ -119,14 +140,17 @@ void Block::Client::acknowledge_read(
             req.start,
             req.length);
     if(length > packet.size()){
+        Genode::error (length, " > ", packet.size());
         throw Ada::Exception::Length_Check();
     }
     Genode::memcpy(data, blk(_device)->tx()->packet_content(packet), length);
     blk(_device)->tx()->release_packet(packet);
 }
 
-void Block::Client::acknowledge_sync(Block::Client::Request &)
-{ }
+void Block::Client::acknowledge_sync(Block::Client::Request )
+{
+}
 
-void Block::Client::acknowledge_write(Block::Client::Request &)
-{ }
+void Block::Client::acknowledge_write(Block::Client::Request )
+{
+}
