@@ -2,6 +2,7 @@
 set build_components {
     core init
     timer
+    server/log_terminal
     test/block/server
     cbe/test/block_client
 }
@@ -48,7 +49,14 @@ append config {
     </start>
 
     <start name="cbe-block_client">
+        <resource name="RAM" quantum="16M"/>
+    </start>
+
+    <start name="log_terminal">
         <resource name="RAM" quantum="8M"/>
+        <provides>
+            <service name="Terminal"/>
+        </provides>
     </start>
 
 </config>
@@ -59,7 +67,9 @@ install_config $config
 set boot_modules {
     core init
     ld.lib.so
+    spark.lib.so
     timer
+    log_terminal
     test-block-server
     cbe-block_client
 }

@@ -5,7 +5,7 @@ Cxx_block_test::Cxx_block_test() : _block()
 
 void Cxx_block_test::run()
 {
-    Genode::log("Ada block");
+    _block.initialize();
     Block::Client::Request req {Block::Client::WRITE, {}, 1, 1};
     Genode::memset(_buffer, 'c', Block::Client::BLOCK_SIZE);
     req.start = 1;
@@ -52,4 +52,5 @@ void Cxx_block_test::run()
             Genode::log(Genode::String<Block::Client::BLOCK_SIZE>(static_cast<const char*>(_buffer)));
         }
     }
+    _block.finalize();
 }
