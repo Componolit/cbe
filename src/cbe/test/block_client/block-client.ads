@@ -1,4 +1,7 @@
 
+private with Cbe;
+private with Cbe.Block;
+
 package Block.Client
    with SPARK_Mode
 is
@@ -48,11 +51,9 @@ is
 
 private
 
-   type Private_Data is array (Long_Integer range 1 .. 16) of Byte;
-   type Device_Instance is mod 2 ** 64
-      with Size => 64;
-   type Device is record
-      Instance : Device_Instance;
+   type Private_Data is new Cbe.Genode_Uint8_T_Array (1 .. 16);
+   type Device is limited record
+      Instance : Cbe.BLock.Client.Class;
    end record;
 
 

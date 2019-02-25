@@ -43,7 +43,7 @@ is
       type Private_Uint64_T_Address_Array is array (Natural range <>) of Private_Uint64_T_Address;
 
       type Class is
-      record
+      limited record
          Private_X_Device : Private_Uint64_T;
       end record
       with Import, Convention => CPP;
