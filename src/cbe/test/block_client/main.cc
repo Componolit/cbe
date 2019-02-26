@@ -9,6 +9,8 @@ Genode::Env *component_env;
 Terminal::Connection *__genode_terminal;
 
 extern "C" void ada_block_test_run(void);
+extern "C" void adainit();
+extern "C" void adafinal();
 
 struct Main
 {
@@ -31,6 +33,7 @@ struct Main
 
 void Component::construct(Genode::Env &env)
 {
+    adainit();
     component_env = &env;
     env.exec_static_constructors();
     static Main main(env);

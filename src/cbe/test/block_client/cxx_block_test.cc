@@ -26,7 +26,7 @@ void Cxx_block_test::run()
             Genode::log("writing finished");
         }
         if(started && !handled){
-            Genode::log("Write to block ", req.start, req.success ? " succeeded" : " failed");
+            Genode::log("Write to block ", req.start, req.status == Block::Client::OK ? " succeeded" : " failed");
         }
     }
     req.kind = Block::Client::READ;
@@ -47,9 +47,14 @@ void Cxx_block_test::run()
             Genode::log("reading finished");
         }
         if(started && !handled){
-            Genode::log("Reading from block ", req.start, req.success ? " succeeded" : " failed");
-            _block.acknowledge_read(req, (Genode::uint8_t *)_buffer, Block::Client::BLOCK_SIZE);
-            Genode::log(Genode::String<Block::Client::BLOCK_SIZE>(static_cast<const char*>(_buffer)));
+            if(req.status == Block::Client::OK){
+                _block.read(req, (Genode::uint8_t *)_buffer, Block::Client::BLOCK_SIZE);
+            }
+            Genode::log("Reading from block ", req.start, req.status == Block::Client::OK ? " succeeded" : " failed");
+            if(req.status == Block::Client::OK){
+                Genode::log(Genode::String<Block::Client::BLOCK_SIZE>(static_cast<const char*>(_buffer)));
+            }
+            _block.acknowledge(req);
         }
     }
     _block.finalize();

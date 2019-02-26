@@ -3,6 +3,7 @@ with Block;
 with Block.Client;
 with Gnat.Io;
 use all type Block.Client.Request_Kind;
+use all type Block.Client.Request_Status;
 
 package body Ada_Block_Test is
 
@@ -38,7 +39,7 @@ package body Ada_Block_Test is
             end if;
             if started and not handled and Req.Kind = Block.Client.Write then
                Gnat.Io.Put_Line ("Write to block " &
-               (if Req.Success then " succeeded" else " failed"));
+               (if Req.Status = Block.Client.Ok then " succeeded" else " failed"));
             end if;
          end;
          exit when handled;
@@ -54,7 +55,7 @@ package body Ada_Block_Test is
       handled := false;
       loop
          declare
-            Req : constant Block.Client.Request := Block.Client.Next (Client);
+            Req : Block.Client.Request := Block.Client.Next (Client);
          begin
             started := started or Req.Kind /= Block.Client.None;
             handled := started and Req.Kind = Block.Client.None;
@@ -62,10 +63,15 @@ package body Ada_Block_Test is
                Gnat.Io.Put_Line ("reading finished");
             end if;
             if started and not handled and Req.Kind = Block.Client.Read then
+               if Req.Status = Block.Client.Ok then
+                  Block.Client.Read (Client, Req, Buf);
+               end if;
                Gnat.Io.Put_Line ("Reading from block " &
-               (if Req.Success then " succeeded" else " failed"));
-               Block.Client.Acknowledge_Read (Client, Req, Buf);
-               Gnat.Io.Put_Line (Convert_Block (Buf));
+               (if Req.Status = Block.Client.Ok then " succeeded" else " failed"));
+               if Req.Status = Block.Client.Ok then
+                  Gnat.Io.Put_Line (Convert_Block (Buf));
+               end if;
+               Block.Client.Acknowledge (Client, Req);
             end if;
          end;
          exit when handled;
