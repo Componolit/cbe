@@ -1,5 +1,7 @@
 
 with Ada.Unchecked_Conversion;
+with Cbe;
+with Cbe.Block;
 with Cbe.Genode;
 use all type Cbe.Bool;
 

@@ -17,7 +17,6 @@ package body Ada_Block_Test is
       Started : Boolean := False;
       Handled : Boolean := False;
    begin
-      Gnat.Io.Put_Line ("test");
       Block.Client.Initialize_Device (Client, "");
       Write_Req.Start := 1;
       Write_Req.Length := 1;
