@@ -1,6 +1,5 @@
 
-private with Cbe;
-private with Cbe.Block;
+private with Internals.Block;
 
 package Block.Client
    with SPARK_Mode
@@ -51,10 +50,7 @@ is
 
 private
 
-   type Private_Data is new Cbe.Genode_Uint8_T_Array (1 .. 16);
-   type Device is limited record
-      Instance : Cbe.BLock.Client.Class;
-   end record;
-
+   type Device is new Internals.Block.Device;
+   type Private_Data is new Internals.Block.Private_Data;
 
 end Block.Client;
