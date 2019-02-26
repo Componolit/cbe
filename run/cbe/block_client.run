@@ -68,6 +68,7 @@ set boot_modules {
     core init
     ld.lib.so
     spark.lib.so
+    ada_interface.lib.so
     timer
     log_terminal
     test-block-server
