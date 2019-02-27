@@ -7,7 +7,7 @@ class Cxx_block_test
 {
     private:
         Block::Client _block;
-        char _buffer[Block::Client::BLOCK_SIZE];
+        char _buffer[4096];
     public:
         Cxx_block_test();
         void run();
