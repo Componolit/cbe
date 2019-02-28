@@ -16,14 +16,17 @@ struct Block_session_component : Genode::Rpc_object<Block::Session>, Block::Requ
 {
 
     Genode::Entrypoint &_ep;
+    Cai::Block::Server &_server;
 
     Block_session_component(
             Genode::Region_map &rm,
             Genode::Dataspace_capability ds,
             Genode::Entrypoint &ep,
-            Genode::Signal_context_capability sigh) :
-        Request_stream(rm, ds, ep, sigh, 512),
-        _ep(ep)
+            Genode::Signal_context_capability sigh,
+            Cai::Block::Server &server) :
+        Request_stream(rm, ds, ep, sigh, server.block_size()),
+        _ep(ep),
+        _server(server)
     {
         _ep.manage(*this);
     }
@@ -35,11 +38,13 @@ struct Block_session_component : Genode::Rpc_object<Block::Session>, Block::Requ
 
     void info(Block::sector_t *count, Genode::size_t *size, Block::Session::Operations *ops) override
     {
-        *count = 1024;
-        *size = 512;
+        *count = _server.block_count();
+        *size = _server.block_size();
         *ops = Block::Session::Operations();
         ops->set_operation(Block::Packet_descriptor::Opcode::READ);
-        ops->set_operation(Block::Packet_descriptor::Opcode::WRITE);
+        if(_server.writable()){
+            ops->set_operation(Block::Packet_descriptor::Opcode::WRITE);
+        }
     }
 
     void sync() override { }
@@ -56,48 +61,43 @@ struct Root : Genode::Rpc_object<Genode::Typed_root<Block::Session>>
     Genode::Signal_handler<Root> _request_handler;
     Genode::Constructible<Genode::Attached_ram_dataspace> _ds;
     Genode::Constructible<Block_session_component> _session;
-
-    void temp_ack(
-            Block::Request::Operation op,
-            Block::Request::Success ,
-            Genode::uint64_t bn,
-            Genode::uint64_t os,
-            Genode::uint32_t ct)
-    {
-        Block::Request req {op, Block::Request::Success::TRUE, bn, os, ct};
-        _session->try_acknowledge([&] (Block_session_component::Ack &ack){
-                ack.submit(req);
-                });
-    }
+    Genode::Constructible<Cai::Block::Server> _server;
 
     void handle_request()
     {
-        Genode::log(__func__);
         if(!_session.constructed()){
             return;
         }
 
         _session->with_requests([&] (Block::Request request){
+                Cai::Block::Request cai_request = create_cai_block_request(request);
                 _session->with_content(request, [&] (void *ptr, Genode::size_t size){
-                        Block::Request::Operation op = request.operation;
-                        Genode::uint64_t bn = request.block_number;
-                        Genode::uint32_t ct = request.count;
-                        Genode::uint64_t os = request.offset;
-                        Block::Request::Success sc = request.success;
-                        Genode::log((Genode::uint32_t)op, " ", bn, " ", ct, " ", os);
-                        Genode::log(ptr, " ", size);
-                        temp_ack(op, sc, bn, os, ct);
-                        });
-                return Block_session_component::Response::ACCEPTED;
+                        switch(request.operation){
+                            case Block::Request::Operation::READ:
+                                _server->read(static_cast<Genode::uint8_t *>(ptr), size, cai_request);
+                                break;
+                            case Block::Request::Operation::WRITE:
+                                _server->write(static_cast<Genode::uint8_t *>(ptr), size, cai_request);
+                                break;
+                            case Block::Request::Operation::SYNC:
+                                _server->sync(cai_request);
+                                break;
+                            default:
+                                Genode::warning("Invalid packet");
+                                break;
+                        }
+                    });
+                if(cai_request.status == Cai::Block::Status::ERROR){
+                    return Block_session_component::Response::RETRY;
+                }else{
+                    return Block_session_component::Response::ACCEPTED;
+                }
             });
-
         _session->wakeup_client();
     }
 
     Genode::Capability<Genode::Session> session(Root::Session_args const &args, Genode::Affinity const &) override
     {
-        Genode::log(__func__, " ", args.string());
-
         Genode::size_t const ds_size = Genode::Arg_string::find_arg(args.string(), "tx_buf_size").ulong_value(0);
         Genode::Ram_quota const ram_quota = Genode::ram_quota_from_args(args.string());
         if (ds_size >= ram_quota.value) {
@@ -105,8 +105,12 @@ struct Root : Genode::Rpc_object<Genode::Typed_root<Block::Session>>
             throw Genode::Insufficient_ram_quota();
         }
 
+        _server.construct();
         _ds.construct(_env.ram(), _env.rm(), ds_size);
-        _session.construct(_env.rm(), _ds->cap(), _env.ep(), _request_handler);
+        _session.construct(_env.rm(), _ds->cap(), _env.ep(), _request_handler, *_server);
+        _server->initialize(
+                Genode::session_label_from_args(args.string()).last_element().string(),
+                reinterpret_cast<Genode::uint64_t>(&_session));
         return _session->cap();
     }
 
@@ -115,7 +119,9 @@ struct Root : Genode::Rpc_object<Genode::Typed_root<Block::Session>>
 
     void close(Genode::Capability<Genode::Session>) override
     {
+        _server->finalize();
         _session.destruct();
+        _server.destruct();
         _ds.destruct();
     }
 
@@ -123,10 +129,9 @@ struct Root : Genode::Rpc_object<Genode::Typed_root<Block::Session>>
         _env(env),
         _request_handler(env.ep(), *this, &Root::handle_request),
         _ds(),
-        _session()
-    {
-        Genode::log(__func__);
-    }
+        _session(),
+        _server()
+    { }
 };
 
 class Block_Server_Main

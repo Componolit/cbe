@@ -20,8 +20,8 @@ namespace Block
 
         public:
 
-            Server(const char *label, Genode::uint64_t session);
-            Ada void initialize(char *label, Genode::uint64_t session);
+            Server();
+            Ada void initialize(const char *label, Genode::uint64_t session);
             Ada void finalize();
             Ada Genode::uint64_t block_count();
             Ada Genode::uint64_t block_size();
@@ -37,7 +37,7 @@ namespace Block
                     Genode::uint8_t buffer[],
                     Genode::uint64_t size,
                     Request &req);
-            void acknowledge(Request &req, bool success);
+            void acknowledge(Request &req);
     };
 }
 
