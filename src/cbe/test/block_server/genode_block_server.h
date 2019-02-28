@@ -2,93 +2,131 @@
 #ifndef _GENODE_BLOCK_SERVER_H_
 #define _GENODE_BLOCK_SERVER_H_
 
-#include <base/heap.h>
-#include <block/component.h>
-#include <block/driver.h>
-#include <util/string.h>
+#include <session/session.h>
+#include <base/attached_ram_dataspace.h>
+#include <block/request_stream.h>
+#include <util/reconstructible.h>
 
-class Driver : public Block::Driver
+#include <genode_packet.h>
+namespace Cai {
+#include <block_server.h>
+}
+
+struct Block_session_component : Genode::Rpc_object<Block::Session>, Block::Request_stream
 {
-    private:
 
-        Driver(Driver const &);
-        Driver &operator = (Driver const &);
+    Genode::Entrypoint &_ep;
 
-    public:
-        Driver(Genode::Env &env, const char *label) :
-            Block::Driver(env.ram())
-        {
-            Genode::log(__func__, " ", Genode::Cstring(label));
-        }
+    Block_session_component(
+            Genode::Region_map &rm,
+            Genode::Dataspace_capability ds,
+            Genode::Entrypoint &ep,
+            Genode::Signal_context_capability sigh) :
+        Request_stream(rm, ds, ep, sigh, 512),
+        _ep(ep)
+    {
+        _ep.manage(*this);
+    }
 
-        Genode::size_t block_size() override
-        {
-            return 512;
-        }
+    ~Block_session_component()
+    {
+        _ep.dissolve(*this);
+    }
 
-        Block::sector_t block_count() override
-        {
-            return 1024;
-        }
+    void info(Block::sector_t *count, Genode::size_t *size, Block::Session::Operations *ops) override
+    {
+        *count = 1024;
+        *size = 512;
+        *ops = Block::Session::Operations();
+        ops->set_operation(Block::Packet_descriptor::Opcode::READ);
+        ops->set_operation(Block::Packet_descriptor::Opcode::WRITE);
+    }
 
-        Block::Session::Operations ops() override
-        {
-            Block::Session::Operations ops;
-            ops.set_operation(Block::Packet_descriptor::READ);
-            ops.set_operation(Block::Packet_descriptor::WRITE);
-            return ops;
-        }
+    void sync() override { }
 
-        void session_invalidated() override
-        {
-            Genode::log(__func__);
-        }
-
-        void read(
-                Block::sector_t,
-                Genode::size_t count,
-                char *buffer,
-                Block::Packet_descriptor &packet) override
-        {
-            Genode::log(__func__);
-            Genode::memset(buffer, 'x', count * 512);
-            ack_packet(packet);
-        }
-
-        void write(
-                Block::sector_t,
-                Genode::size_t,
-                const char *,
-                Block::Packet_descriptor &packet) override
-        {
-            Genode::log(__func__);
-            ack_packet(packet);
-        }
+    Genode::Capability<Tx> tx_cap() override
+    {
+        return Request_stream::tx_cap();
+    }
 };
 
-class Factory : public Block::Driver_factory
+struct Root : Genode::Rpc_object<Genode::Typed_root<Block::Session>>
 {
-    private:
+    Genode::Env &_env;
+    Genode::Signal_handler<Root> _request_handler;
+    Genode::Constructible<Genode::Attached_ram_dataspace> _ds;
+    Genode::Constructible<Block_session_component> _session;
 
-        Factory(Factory const &);
-        Factory &operator = (Factory const &);
+    void temp_ack(
+            Block::Request::Operation op,
+            Block::Request::Success ,
+            Genode::uint64_t bn,
+            Genode::uint64_t os,
+            Genode::uint32_t ct)
+    {
+        Block::Request req {op, Block::Request::Success::TRUE, bn, os, ct};
+        _session->try_acknowledge([&] (Block_session_component::Ack &ack){
+                ack.submit(req);
+                });
+    }
 
-    public:
-
-        Driver *_driver = nullptr;
-
-        Factory(Genode::Env &env, Genode::Heap &heap)
-        {
-            _driver = new (&heap) Driver(env, "");
+    void handle_request()
+    {
+        Genode::log(__func__);
+        if(!_session.constructed()){
+            return;
         }
 
-        Block::Driver *create() override
-        {
-            return _driver;
+        _session->with_requests([&] (Block::Request request){
+                _session->with_content(request, [&] (void *ptr, Genode::size_t size){
+                        Block::Request::Operation op = request.operation;
+                        Genode::uint64_t bn = request.block_number;
+                        Genode::uint32_t ct = request.count;
+                        Genode::uint64_t os = request.offset;
+                        Block::Request::Success sc = request.success;
+                        Genode::log((Genode::uint32_t)op, " ", bn, " ", ct, " ", os);
+                        Genode::log(ptr, " ", size);
+                        temp_ack(op, sc, bn, os, ct);
+                        });
+                return Block_session_component::Response::ACCEPTED;
+            });
+
+        _session->wakeup_client();
+    }
+
+    Genode::Capability<Genode::Session> session(Root::Session_args const &args, Genode::Affinity const &) override
+    {
+        Genode::log(__func__, " ", args.string());
+
+        Genode::size_t const ds_size = Genode::Arg_string::find_arg(args.string(), "tx_buf_size").ulong_value(0);
+        Genode::Ram_quota const ram_quota = Genode::ram_quota_from_args(args.string());
+        if (ds_size >= ram_quota.value) {
+            Genode::warning("communication buffer size exceeds session quota");
+            throw Genode::Insufficient_ram_quota();
         }
 
-        void destroy(Block::Driver *) override
-        { }
+        _ds.construct(_env.ram(), _env.rm(), ds_size);
+        _session.construct(_env.rm(), _ds->cap(), _env.ep(), _request_handler);
+        return _session->cap();
+    }
+
+    void upgrade(Genode::Capability<Genode::Session>, Root::Upgrade_args const &) override
+    { }
+
+    void close(Genode::Capability<Genode::Session>) override
+    {
+        _session.destruct();
+        _ds.destruct();
+    }
+
+    Root(Genode::Env &env) :
+        _env(env),
+        _request_handler(env.ep(), *this, &Root::handle_request),
+        _ds(),
+        _session()
+    {
+        Genode::log(__func__);
+    }
 };
 
 class Block_Server_Main
@@ -96,17 +134,13 @@ class Block_Server_Main
     private:
 
         Genode::Env &_env;
-        Genode::Heap _heap;
-        Factory _factory;
-        Block::Root _root;
+        Root _root;
 
     public:
 
         Block_Server_Main(Genode::Env &env) :
             _env(env),
-            _heap(env.ram(), env.rm()),
-            _factory(env, _heap),
-            _root(env.ep(), _heap, env.rm(), _factory, true)
+            _root(env)
         { }
 
         void announce()

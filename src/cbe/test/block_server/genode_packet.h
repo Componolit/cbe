@@ -2,9 +2,12 @@
 #ifndef _GENODE_PACKET_H_
 #define _GENODE_PACKET_H_
 
-#include <block.h>
 #include <block_session/block_session.h>
+#include <block/request_stream.h>
 #include <util/string.h>
+namespace Cai {
+#include <block.h>
+}
 
 struct Genode_Packet
 {
@@ -16,7 +19,7 @@ struct Genode_Packet
         size(s)
     { }
 
-    static Block::Packet_descriptor create(const Block::Request &r)
+    static Block::Packet_descriptor create(const Cai::Block::Request &r)
     {
         Block::Packet_descriptor::Opcode opcode[4] = {
             Block::Packet_descriptor::END,
@@ -33,19 +36,19 @@ struct Genode_Packet
                 r.length);
     }
 
-    static Block::Request create(const Block::Packet_descriptor &p)
+    static Cai::Block::Request create(const Block::Packet_descriptor &p)
     {
-        Block::Kind request_kind[3] = {
-            Block::READ,
-            Block::WRITE,
-            Block::NONE
+        Cai::Block::Kind request_kind[3] = {
+            Cai::Block::READ,
+            Cai::Block::WRITE,
+            Cai::Block::NONE
         };
-        Block::Request req = {
+        Cai::Block::Request req = {
             request_kind[p.operation()],
             {},
             p.block_number(),
             p.block_count(),
-            p.succeeded() ? Block::OK : Block::ERROR
+            p.succeeded() ? Cai::Block::OK : Cai::Block::ERROR
         };
         ((Genode_Packet*)&req.uid)->offset = p.offset();
         ((Genode_Packet*)&req.uid)->size = p.size();

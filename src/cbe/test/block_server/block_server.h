@@ -20,7 +20,7 @@ namespace Block
 
         public:
 
-            Server(char *label, Genode::uint64_t session);
+            Server(const char *label, Genode::uint64_t session);
             Ada void initialize(char *label, Genode::uint64_t session);
             Ada void finalize();
             Ada Genode::uint64_t block_count();
@@ -28,18 +28,12 @@ namespace Block
             Ada bool writable();
             Ada Genode::uint64_t maximal_transfer_size();
             Ada void read(
-                    Genode::uint64_t start,
-                    Genode::uint64_t length,
                     Genode::uint8_t buffer[],
                     Genode::uint64_t size,
                     Request &req);
             Ada void sync(
-                    Genode::uint64_t start,
-                    Genode::uint64_t length,
                     Request &req);
             Ada void write(
-                    Genode::uint64_t start,
-                    Genode::uint64_t length,
                     Genode::uint8_t buffer[],
                     Genode::uint64_t size,
                     Request &req);
