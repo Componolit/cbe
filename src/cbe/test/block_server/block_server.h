@@ -3,25 +3,25 @@
 #define _BLOCK_SERVER_H_
 
 #include <base/fixed_stdint.h>
-#include <block.h>
+//#include <block.h>
 
 #define Ada __attribute__((annotate("ada")))
 
 namespace Block
 {
+    struct Request;
 
     class Server
     {
         private:
 
-            Genode::uint64_t _session;
-            Genode::uint64_t _block_count;
-            Genode::uint64_t _block_size;
+             void *_session;
+             void *_state;
 
         public:
 
             Server();
-            Ada void initialize(const char *label, Genode::uint64_t session);
+            Ada void initialize(const char *label, Genode::uint64_t length, Genode::uint64_t session);
             Ada void finalize();
             Ada Genode::uint64_t block_count();
             Ada Genode::uint64_t block_size();
@@ -38,6 +38,8 @@ namespace Block
                     Genode::uint64_t size,
                     Request &req);
             void acknowledge(Request &req);
+            void malloc_state(void **state, Genode::uint64_t size);
+            void free_state(void *state, Genode::uint64_t size);
     };
 }
 
