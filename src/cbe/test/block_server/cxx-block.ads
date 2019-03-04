@@ -29,8 +29,8 @@ is
    is
       type Class is
       limited record
-         Session : Cxx.Genode.Uint64_T;
-         State : Cxx.Genode.Uint64_T;
+         Session : Cxx.Void_Address;
+         State : Cxx.Void_Address;
       end record
       with Import, Convention => CPP;
 
@@ -38,8 +38,8 @@ is
       with Global => null;
       pragma Cpp_Constructor (Constructor, "_ZN3Cai5Block6ServerC1Ev");
 
-      procedure Initialize (This : in out Class; Label : Cxx.Char_Array; Length : Cxx.Genode.Uint64_T; Session : Cxx.Genode.Uint64_T)
-      with Global => null, Export, Convention => CPP, External_Name => "_ZN3Cai5Block6Server10initializeEPKcyy";
+      procedure Initialize (This : in out Class; Label : Cxx.Char_Array; Length : Cxx.Genode.Uint64_T; Session : Cxx.Void_Address)
+      with Global => null, Export, Convention => CPP, External_Name => "_ZN3Cai5Block6Server10initializeEPKcyPv";
 
       procedure Finalize (This : in out Class)
       with Global => null, Export, Convention => CPP, External_Name => "_ZN3Cai5Block6Server8finalizeEv";

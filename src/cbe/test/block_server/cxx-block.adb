@@ -17,21 +17,17 @@ package body Cxx.Block is
 
       package Server_Component is new Standard.Block.Server (Component.Block_Device, Ack);
 
-      function Convert_Address is new Ada.Unchecked_Conversion (Cxx.Void_Address, Cxx.Genode.Uint64_T);
-      function Convert_Address is new Ada.Unchecked_Conversion (Cxx.Genode.Uint64_T, Cxx.Void_Address);
-
-      procedure Initialize (This : in out Class; Label : Cxx.Char_Array; Length : Cxx.Genode.Uint64_T; Session : Cxx.Genode.Uint64_T)
+      procedure Initialize (This : in out Class; Label : Cxx.Char_Array; Length : Cxx.Genode.Uint64_T; Session : Cxx.Void_Address)
       is
          subtype C_Str is Cxx.Char_Array (1 .. Integer (Length));
          subtype L_Str is String (1 .. Integer (Length));
          function Convert_String is new Ada.Unchecked_Conversion (C_Str, L_Str);
-         State_Ptr : Cxx.Void_Address := Convert_Address (This.State);
       begin
-         Malloc_State (This, State_Ptr, Component.Block_Device'Size / 8);
-         This.State := Convert_Address (State_Ptr);
+         This.Session := Session;
+         Malloc_State (This, This.State, Component.Block_Device'Size / 8);
          declare
             Dev : Component.Block_Device
-            with Address => State_Ptr;
+            with Address => This.State;
          begin
             Server_Component.Initialize (Dev, Convert_String (Label (1 .. Integer (Length))));
          end;

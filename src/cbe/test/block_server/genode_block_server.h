@@ -117,8 +117,8 @@ struct Root : Genode::Rpc_object<Genode::Typed_root<Block::Session>>
         _session.construct(_env.rm(), _ds->cap(), _env.ep(), _request_handler, *_server, _heap);
         _server->initialize(
                 label,
-                Genode::strlen(label),
-                reinterpret_cast<Genode::uint64_t>(&_session));
+                static_cast<Genode::uint64_t>(Genode::strlen(label)),
+                static_cast<void *>(&_session));
         return _session->cap();
     }
 

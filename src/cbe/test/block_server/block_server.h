@@ -21,7 +21,7 @@ namespace Block
         public:
 
             Server();
-            Ada void initialize(const char *label, Genode::uint64_t length, Genode::uint64_t session);
+            Ada void initialize(const char *label, Genode::uint64_t length, void *session);
             Ada void finalize();
             Ada Genode::uint64_t block_count();
             Ada Genode::uint64_t block_size();

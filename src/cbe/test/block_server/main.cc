@@ -1,7 +1,12 @@
 
 #include <base/component.h>
+#include <terminal_session/connection.h>
+#include <util/reconstructible.h>
 
 #include <genode_block_server.h>
+
+Genode::Constructible<Terminal::Connection> _terminal;
+Terminal::Connection *__genode_terminal;
 
 struct Main
 {
@@ -18,5 +23,8 @@ struct Main
 
 void Component::construct(Genode::Env &env)
 {
+    env.exec_static_constructors();
+    _terminal.construct(env);
+    __genode_terminal = &*_terminal;
     static Main main(env);
 }
