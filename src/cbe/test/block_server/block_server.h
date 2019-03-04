@@ -20,8 +20,8 @@ namespace Block
 
         public:
 
-            Server();
-            Ada void initialize(const char *label, Genode::uint64_t length, void *session);
+            Server(void *session, void *state);
+            Ada void initialize(const char *label, Genode::uint64_t length);
             Ada void finalize();
             Ada Genode::uint64_t block_count();
             Ada Genode::uint64_t block_size();
@@ -38,8 +38,7 @@ namespace Block
                     Genode::uint64_t size,
                     Request &req);
             void acknowledge(Request &req);
-            void malloc_state(void **state, Genode::uint64_t size);
-            void free_state(void *state, Genode::uint64_t size);
+            static Ada Genode::uint64_t state_size();
     };
 }
 

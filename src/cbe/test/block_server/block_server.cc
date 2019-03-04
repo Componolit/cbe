@@ -7,9 +7,9 @@ namespace Cai {
 #include <block_server.h>
 }
 
-Cai::Block::Server::Server() :
-    _session(nullptr),
-    _state(nullptr)
+Cai::Block::Server::Server(void *session, void *state) :
+    _session(session),
+    _state(state)
 { }
 
 static Genode::Constructible<Block_session_component> *blk(void *session)
@@ -19,24 +19,11 @@ static Genode::Constructible<Block_session_component> *blk(void *session)
 
 void Cai::Block::Server::acknowledge(Cai::Block::Request &req)
 {
-    (*blk(_session))->try_acknowledge([&] (Block_session_component::Ack &ack){
-            ack.submit(create_genode_block_request(req));
+    if(_session && (*blk(_session)).constructed()){
+        (*blk(_session))->try_acknowledge([&] (Block_session_component::Ack &ack){
+                ack.submit(create_genode_block_request(req));
         });
-}
-
-void Cai::Block::Server::malloc_state(void **state, Genode::uint64_t size)
-{
-    if(!(*blk(_session))->_heap.alloc(
-            *reinterpret_cast<Genode::size_t *>(&size),
-            state)){
-        Genode::error("Failed to allocate state of size ", size);
-        throw Genode::Exception();
+    }else{
+        Genode::error("Failed to acknowledge, session not initialized");
     }
-}
-
-void Cai::Block::Server::free_state(void *state, Genode::uint64_t size)
-{
-    (*blk(_session))->_heap.free(
-            state,
-            *reinterpret_cast<Genode::size_t *>(&size));
 }

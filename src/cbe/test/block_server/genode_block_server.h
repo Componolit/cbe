@@ -19,19 +19,16 @@ struct Block_session_component : Genode::Rpc_object<Block::Session>, Block::Requ
 
     Genode::Entrypoint &_ep;
     Cai::Block::Server &_server;
-    Genode::Sliced_heap &_heap;
 
     Block_session_component(
             Genode::Region_map &rm,
             Genode::Dataspace_capability ds,
             Genode::Entrypoint &ep,
             Genode::Signal_context_capability sigh,
-            Cai::Block::Server &server,
-            Genode::Sliced_heap &heap) :
+            Cai::Block::Server &server) :
         Request_stream(rm, ds, ep, sigh, server.block_size()),
         _ep(ep),
-        _server(server),
-        _heap(heap)
+        _server(server)
     {
         _ep.manage(*this);
     }
@@ -68,6 +65,7 @@ struct Root : Genode::Rpc_object<Genode::Typed_root<Block::Session>>
     Genode::Constructible<Genode::Attached_ram_dataspace> _ds;
     Genode::Constructible<Block_session_component> _session;
     Genode::Constructible<Cai::Block::Server> _server;
+    void *_server_state;
 
     void handle_request()
     {
@@ -106,19 +104,22 @@ struct Root : Genode::Rpc_object<Genode::Typed_root<Block::Session>>
     {
         Genode::size_t const ds_size = Genode::Arg_string::find_arg(args.string(), "tx_buf_size").ulong_value(0);
         Genode::Ram_quota const ram_quota = Genode::ram_quota_from_args(args.string());
-        const char *label = Genode::session_label_from_args(args.string()).last_element().string();
+        const Genode::Session::Label session_label = Genode::session_label_from_args(args.string());
+        const Genode::Session::Label last = session_label.last_element();
+        const char *label = last.string();
+
         if (ds_size >= ram_quota.value) {
             Genode::warning("communication buffer size exceeds session quota");
             throw Genode::Insufficient_ram_quota();
         }
+        _heap.alloc((Genode::size_t)Cai::Block::Server::state_size(), &_server_state);
 
-        _server.construct();
+        _server.construct(reinterpret_cast<void *>(&_session), _server_state);
         _ds.construct(_env.ram(), _env.rm(), ds_size);
-        _session.construct(_env.rm(), _ds->cap(), _env.ep(), _request_handler, *_server, _heap);
         _server->initialize(
                 label,
-                static_cast<Genode::uint64_t>(Genode::strlen(label)),
-                static_cast<void *>(&_session));
+                static_cast<Genode::uint64_t>(Genode::strlen(label)));
+        _session.construct(_env.rm(), _ds->cap(), _env.ep(), _request_handler, *_server);
         return _session->cap();
     }
 
@@ -129,6 +130,7 @@ struct Root : Genode::Rpc_object<Genode::Typed_root<Block::Session>>
     {
         _server->finalize();
         _session.destruct();
+        _heap.free(_server_state, (Genode::size_t)Cai::Block::Server::state_size());
         _server.destruct();
         _ds.destruct();
     }
@@ -139,8 +141,13 @@ struct Root : Genode::Rpc_object<Genode::Typed_root<Block::Session>>
         _request_handler(env.ep(), *this, &Root::handle_request),
         _ds(),
         _session(),
-        _server()
+        _server(),
+        _server_state(nullptr)
     { }
+
+    private:
+        Root(const Root&);
+        Root &operator = (Root const &);
 };
 
 class Block_Server_Main

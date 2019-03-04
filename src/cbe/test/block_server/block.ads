@@ -1,8 +1,9 @@
 
+with System;
+
 package Block
    with SPARK_Mode
 is
-
    type Unsigned_Long is range 0 .. 2 ** 63 - 1
       with Size => 64;
    type Id is mod 2 ** 64
@@ -31,6 +32,8 @@ is
             Status : Request_Status;
       end case;
    end record;
+
+   subtype Context is System.Address;
 
 private
 
