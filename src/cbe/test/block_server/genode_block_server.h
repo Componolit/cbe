@@ -104,9 +104,7 @@ struct Root : Genode::Rpc_object<Genode::Typed_root<Block::Session>>
     {
         Genode::size_t const ds_size = Genode::Arg_string::find_arg(args.string(), "tx_buf_size").ulong_value(0);
         Genode::Ram_quota const ram_quota = Genode::ram_quota_from_args(args.string());
-        const Genode::Session::Label session_label = Genode::session_label_from_args(args.string());
-        const Genode::Session::Label last = session_label.last_element();
-        const char *label = last.string();
+        const Genode::Session::Label label = Genode::session_label_from_args(args.string()).last_element();
 
         if (ds_size >= ram_quota.value) {
             Genode::warning("communication buffer size exceeds session quota");
@@ -117,8 +115,8 @@ struct Root : Genode::Rpc_object<Genode::Typed_root<Block::Session>>
         _server.construct(reinterpret_cast<void *>(&_session), _server_state);
         _ds.construct(_env.ram(), _env.rm(), ds_size);
         _server->initialize(
-                label,
-                static_cast<Genode::uint64_t>(Genode::strlen(label)));
+                label.string(),
+                static_cast<Genode::uint64_t>(Genode::strlen(label.string())));
         _session.construct(_env.rm(), _ds->cap(), _env.ep(), _request_handler, *_server);
         return _session->cap();
     }

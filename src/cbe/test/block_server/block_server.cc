@@ -21,7 +21,10 @@ void Cai::Block::Server::acknowledge(Cai::Block::Request &req)
 {
     if(_session && (*blk(_session)).constructed()){
         (*blk(_session))->try_acknowledge([&] (Block_session_component::Ack &ack){
-                ack.submit(create_genode_block_request(req));
+                if(req.status != Cai::Block::ACK){
+                    ack.submit(create_genode_block_request(req));
+                    req.status = Cai::Block::ACK;
+                }
         });
     }else{
         Genode::error("Failed to acknowledge, session not initialized");

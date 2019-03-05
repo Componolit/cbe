@@ -10,6 +10,7 @@ package body Block.Server is
    procedure Initialize (D : in out Component.Block_Device; L : String; C : Context)
    is
    begin
+      Gnat.Io.Put_Line ("Initializing Ada RAM Disk with label " & L);
       D.Context := C;
       D.Block_Count := Ram_Disk'Length;
       D.Block_Size := Disk_Block'Length;
@@ -48,7 +49,6 @@ package body Block.Server is
    procedure Read (D : in out Component.Block_Device; B : out Buffer; R : in out Request)
    is
    begin
-      Gnat.Io.Put_Line ("Read");
       if B'Length = Disk_Block'Length and
          R.Start in Ram_Disk'Range
       then
@@ -70,7 +70,6 @@ package body Block.Server is
    procedure Write (D : in out Component.Block_Device; B : Buffer; R : in out Request)
    is
    begin
-      Gnat.Io.Put_Line ("Write");
       if
          B'Length = Disk_Block'Length and
          R.Start in Ram_Disk'Range
