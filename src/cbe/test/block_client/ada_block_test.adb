@@ -5,6 +5,7 @@ with Gnat.Io;
 use all type Block.Size;
 use all type Block.Request_Kind;
 use all type Block.Request_Status;
+use all type Block.Unsigned_Long;
 
 package body Ada_Block_Test is
 
@@ -72,6 +73,49 @@ package body Ada_Block_Test is
                   Gnat.Io.Put_Line (Convert_Block (Buf) (1 .. Standard.Integer (Block_Size)));
                end if;
                Block.Client.Acknowledge (Client, Req);
+            end if;
+         end;
+      end loop;
+      Gnat.Io.Put_Line ("Reading finished.");
+      Gnat.Io.Put_Line ("Writing 2 block request...");
+      Write_Req.Start := 4;
+      Write_Req.Length := 2;
+      Buf (1 .. Block.Unsigned_Long (Block_Size) * Block.Unsigned_Long (Write_Req.Length)) := (others => Block.Byte (Character'Pos ('x')));
+      Block.Client.Submit_Write (Client, Write_Req, Buf (1 .. Block.Unsigned_Long (Block_Size) * Block.Unsigned_Long (Write_Req.Length)));
+      Acknowledged_Blocks := 0;
+      while Acknowledged_Blocks < 1 loop
+         declare
+            Req : Block.Request := Block.Client.Next (Client);
+         begin
+            if Req.Kind = Block.Write then
+               Gnat.Io.Put_Line ("Writing 2 blocks " &
+               (if Req.Status = Block.Ok then "succeeded" else "failed"));
+               Block.Client.Acknowledge (Client, Req);
+               Acknowledged_Blocks := 1;
+            end if;
+         end;
+      end loop;
+      Gnat.Io.Put_Line ("Writing finished.");
+      Gnat.Io.Put_Line ("Reading 2 block request...");
+      Read_Req.Start := 4;
+      Read_Req.Length := 2;
+      Block.Client.Submit_Read (Client, Read_Req);
+      Acknowledged_Blocks := 0;
+      while Acknowledged_Blocks < 1 loop
+         declare
+            Req : Block.Request := Block.Client.Next (Client);
+         begin
+            if Req.Kind = Block.Read then
+               if Req.Status = Block.Ok then
+                  Block.Client.Read (Client, Req, Buf);
+               end if;
+               Gnat.Io.Put_Line ("Reading 2 blocks " &
+               (if Req.Status = Block.Ok then "succeeded" else "failed"));
+               if Req.Status = Block.Ok then
+                  Gnat.Io.Put_Line (Convert_Block (Buf) (1 .. Standard.Integer (Block_Size * Block.Size (Req.Length))));
+               end if;
+               Block.Client.Acknowledge (Client, Req);
+               Acknowledged_Blocks := Acknowledged_Blocks + 1;
             end if;
          end;
       end loop;
