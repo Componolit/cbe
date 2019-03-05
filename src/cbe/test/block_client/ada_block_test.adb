@@ -3,8 +3,8 @@ with Block;
 with Block.Client;
 with Gnat.Io;
 use all type Block.Size;
-use all type Block.Client.Request_Kind;
-use all type Block.Client.Request_Status;
+use all type Block.Request_Kind;
+use all type Block.Request_Status;
 
 package body Ada_Block_Test is
 
@@ -14,8 +14,8 @@ package body Ada_Block_Test is
       subtype Block_String is String (1 .. Block_Buffer'Length);
       function Convert_Block is new Ada.Unchecked_Conversion (Block_Buffer, Block_String);
       Buf : Block_Buffer := (others => 0);
-      Write_Req : Block.Client.Request (Kind => Block.Client.Write);
-      Read_Req : Block.Client.Request (Kind => Block.Client.Read);
+      Write_Req : Block.Request (Kind => Block.Write);
+      Read_Req : Block.Request (Kind => Block.Read);
       Acknowledged_Blocks : Integer;
       Block_Size : Block.Size;
    begin
@@ -37,12 +37,12 @@ package body Ada_Block_Test is
       Acknowledged_Blocks := 0;
       while Acknowledged_Blocks < 3 loop
          declare
-            Req : Block.Client.Request := Block.Client.Next (Client);
+            Req : Block.Request := Block.Client.Next (Client);
          begin
-            if Req.Kind = Block.Client.Write then
+            if Req.Kind = Block.Write then
                Acknowledged_Blocks := Acknowledged_Blocks + 1;
                Gnat.Io.Put_Line ("Write to block " &
-               (if Req.Status = Block.Client.Ok then " succeeded" else " failed"));
+               (if Req.Status = Block.Ok then " succeeded" else " failed"));
                Block.Client.Acknowledge (Client, Req);
             end if;
          end;
@@ -59,16 +59,16 @@ package body Ada_Block_Test is
       Acknowledged_Blocks := 0;
       while Acknowledged_Blocks < 3 loop
          declare
-            Req : Block.Client.Request := Block.Client.Next (Client);
+            Req : Block.Request := Block.Client.Next (Client);
          begin
-            if Req.Kind = Block.Client.Read then
+            if Req.Kind = Block.Read then
                Acknowledged_Blocks := Acknowledged_Blocks + 1;
-               if Req.Status = Block.Client.Ok then
+               if Req.Status = Block.Ok then
                   Block.Client.Read (Client, Req, Buf);
                end if;
                Gnat.Io.Put_Line ("Reading from block " &
-               (if Req.Status = Block.Client.Ok then " succeeded" else " failed"));
-               if Req.Status = Block.Client.Ok then
+               (if Req.Status = Block.Ok then " succeeded" else " failed"));
+               if Req.Status = Block.Ok then
                   Gnat.Io.Put_Line (Convert_Block (Buf) (1 .. Standard.Integer (Block_Size)));
                end if;
                Block.Client.Acknowledge (Client, Req);
