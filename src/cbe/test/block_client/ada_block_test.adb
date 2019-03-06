@@ -49,6 +49,7 @@ package body Ada_Block_Test is
          end;
       end loop;
       Gnat.Io.Put_Line ("Writing finished.");
+      Cai.Block.Client.Sync (Client);
       Gnat.Io.Put_Line ("Reading...");
       Read_Req.Start := 1;
       Read_Req.Length := 1;
@@ -96,6 +97,7 @@ package body Ada_Block_Test is
          end;
       end loop;
       Gnat.Io.Put_Line ("Writing finished.");
+      Cai.Block.Client.Sync (Client);
       Gnat.Io.Put_Line ("Reading 2 block request...");
       Read_Req.Start := 4;
       Read_Req.Length := 2;
