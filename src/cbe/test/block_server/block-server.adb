@@ -49,10 +49,14 @@ package body Block.Server is
    procedure Read (D : in out Component.Block_Device; B : out Buffer; R : in out Request)
    is
    begin
-      if B'Length = Disk_Block'Length and
-         R.Start in Ram_Disk'Range
+      if B'Length mod Disk_Block'Length = 0 and then
+         R.Start in Ram_Disk'Range and then
+         R.Start + Id (R.Length) - 1 in Ram_Disk'Range
       then
-         B := Ram_Disk (R.Start);
+         for I in Id range R.Start .. R.Start + Id (R.Length) - 1 loop
+            B (B'First + Unsigned_Long (I - R.Start) * Disk_Block'Length ..
+               B'First + Unsigned_Long (I - R.Start + 1) * Disk_Block'Length - 1) := Ram_Disk (I);
+         end loop;
          R.Status := Ok;
       else
          R.Status := Error;
@@ -71,10 +75,15 @@ package body Block.Server is
    is
    begin
       if
-         B'Length = Disk_Block'Length and
-         R.Start in Ram_Disk'Range
+         B'Length mod Disk_Block'Length = 0 and then
+         R.Start in Ram_Disk'Range and then
+         R.Start + Id (R.Length) - 1 in Ram_Disk'Range
       then
-         Ram_Disk (R.Start) := B (1 .. 512);
+         for I in Id range R.Start .. R.Start + Id (R.Length) - 1 loop
+            Ram_Disk (I) :=
+               B (B'First + Unsigned_Long (I - R.Start) * Disk_Block'Length ..
+                  B'First + Unsigned_Long (I - R.Start + 1) * Disk_Block'Length - 1);
+         end loop;
          R.Status := Ok;
       else
          R.Status := Error;
