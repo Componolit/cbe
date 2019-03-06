@@ -66,13 +66,6 @@ package body Cai.Block.Server is
       Acknowledge (D, R, D.Context);
    end Read;
 
-   procedure Sync (D : in out Component.Block_Server_Device; R : in out Request)
-   is
-   begin
-      R.Status := Ok;
-      Acknowledge (D, R, D.Context);
-   end Sync;
-
    procedure Write (D : in out Component.Block_Server_Device; B : Buffer; R : in out Request)
    is
    begin
@@ -92,5 +85,12 @@ package body Cai.Block.Server is
       end if;
       Acknowledge (D, R, D.Context);
    end Write;
+
+   procedure Sync (D : in out Component.Block_Server_Device)
+   is
+      pragma Unreferenced (D);
+   begin
+      null;
+   end Sync;
 
 end Cai.Block.Server;
