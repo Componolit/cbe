@@ -1,13 +1,13 @@
 
 with Gnat.Io;
 
-package body Block.Server is
+package body Cai.Block.Server is
 
    subtype Disk_Block is Buffer (1 .. 512);
    type Disk is array (Id range <>) of Disk_Block;
    Ram_Disk : Disk (0 .. 1023);
 
-   procedure Initialize (D : in out Component.Block_Device; L : String; C : Context)
+   procedure Initialize (D : out Component.Block_Server_Device; L : String; C : Context)
    is
    begin
       Gnat.Io.Put_Line ("Initializing Ada RAM Disk with label " & L);
@@ -16,37 +16,39 @@ package body Block.Server is
       D.Block_Size := Disk_Block'Length;
    end Initialize;
 
-   procedure Finalize (D : in out Component.Block_Device)
+   procedure Finalize (D : in out Component.Block_Server_Device)
    is
    begin
       null;
    end Finalize;
 
-   function Block_Count (D : in out Component.Block_Device) return Count
+   function Block_Count (D : Component.Block_Server_Device) return Count
    is
    begin
       return D.Block_Count;
    end Block_Count;
 
-   function Block_Size (D : in out Component.Block_Device) return Size
+   function Block_Size (D : Component.Block_Server_Device) return Size
    is
    begin
       return D.Block_Size;
    end Block_Size;
 
-   function Writable (D : in out Component.Block_Device) return Boolean
+   function Writable (D : Component.Block_Server_Device) return Boolean
    is
+      pragma Unreferenced (D);
    begin
       return True;
    end Writable;
 
-   function Maximal_Transfer_Size (D : in out Component.Block_Device) return Unsigned_Long
+   function Maximal_Transfer_Size (D : Component.Block_Server_Device) return Unsigned_Long
    is
+      pragma Unreferenced (D);
    begin
       return 16#FFFFFFFF#;
    end Maximal_Transfer_Size;
 
-   procedure Read (D : in out Component.Block_Device; B : out Buffer; R : in out Request)
+   procedure Read (D : in out Component.Block_Server_Device; B : out Buffer; R : in out Request)
    is
    begin
       if B'Length mod Disk_Block'Length = 0 and then
@@ -64,14 +66,14 @@ package body Block.Server is
       Acknowledge (D, R, D.Context);
    end Read;
 
-   procedure Sync (D : in out Component.Block_Device; R : in out Request)
+   procedure Sync (D : in out Component.Block_Server_Device; R : in out Request)
    is
    begin
       R.Status := Ok;
       Acknowledge (D, R, D.Context);
    end Sync;
 
-   procedure Write (D : in out Component.Block_Device; B : Buffer; R : in out Request)
+   procedure Write (D : in out Component.Block_Server_Device; B : Buffer; R : in out Request)
    is
    begin
       if
@@ -91,4 +93,4 @@ package body Block.Server is
       Acknowledge (D, R, D.Context);
    end Write;
 
-end Block.Server;
+end Cai.Block.Server;
