@@ -48,16 +48,18 @@ package body Cai.Block.Server is
       return 16#FFFFFFFF#;
    end Maximal_Transfer_Size;
 
-   procedure Read (D : in out Component.Block_Server_Device; B : out Buffer; R : in out Request)
+   procedure Read (D : in out Component.Block_Server_Device; B : System.Address; L : Unsigned_Long; R : in out Request)
    is
+      Buf : Buffer (1 .. L)
+      with Address => B;
    begin
-      if B'Length mod Disk_Block'Length = 0 and then
+      if Buf'Length mod Disk_Block'Length = 0 and then
          R.Start in Ram_Disk'Range and then
          R.Start + Id (R.Length) - 1 in Ram_Disk'Range
       then
          for I in Id range R.Start .. R.Start + Id (R.Length) - 1 loop
-            B (B'First + Unsigned_Long (I - R.Start) * Disk_Block'Length ..
-               B'First + Unsigned_Long (I - R.Start + 1) * Disk_Block'Length - 1) := Ram_Disk (I);
+            Buf (Buf'First + Unsigned_Long (I - R.Start) * Disk_Block'Length ..
+               Buf'First + Unsigned_Long (I - R.Start + 1) * Disk_Block'Length - 1) := Ram_Disk (I);
          end loop;
          R.Status := Ok;
       else
