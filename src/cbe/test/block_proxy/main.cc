@@ -11,6 +11,15 @@ Terminal::Connection *__genode_terminal;
 
 extern "C" void adainit();
 
+extern "C" {
+
+    void log_uint(Genode::uint64_t u)
+    {
+        Genode::log(__func__, " ", u);
+    }
+
+}
+
 struct Main
 {
     Block_Server_Main _block;
