@@ -15,8 +15,8 @@ package body Ada_Block_Test is
       subtype Block_String is String (1 .. Block_Buffer'Length);
       function Convert_Block is new Ada.Unchecked_Conversion (Block_Buffer, Block_String);
       Buf : Block_Buffer := (others => 0);
-      Write_Req : Cai.Block.Request (Kind => Cai.Block.Write);
-      Read_Req : Cai.Block.Request (Kind => Cai.Block.Read);
+      Write_Req : Block_Client.Block_Client.Request (Kind => Cai.Block.Write);
+      Read_Req : Block_Client.Block_Client.Request (Kind => Cai.Block.Read);
       Acknowledged_Blocks : Integer;
       Block_Size : Cai.Block.Size;
       S : Block_Client.State;
@@ -39,7 +39,7 @@ package body Ada_Block_Test is
       Acknowledged_Blocks := 0;
       while Acknowledged_Blocks < 3 loop
          declare
-            Req : Cai.Block.Request := Block_Client.Block_Client.Next (Client);
+            Req : Block_Client.Block_Client.Request := Block_Client.Block_Client.Next (Client);
          begin
             if Req.Kind = Cai.Block.Write then
                Acknowledged_Blocks := Acknowledged_Blocks + 1;
@@ -62,7 +62,7 @@ package body Ada_Block_Test is
       Acknowledged_Blocks := 0;
       while Acknowledged_Blocks < 3 loop
          declare
-            Req : Cai.Block.Request := Block_Client.Block_Client.Next (Client);
+            Req : Block_Client.Block_Client.Request := Block_Client.Block_Client.Next (Client);
          begin
             if Req.Kind = Cai.Block.Read then
                Acknowledged_Blocks := Acknowledged_Blocks + 1;
@@ -87,7 +87,7 @@ package body Ada_Block_Test is
       Acknowledged_Blocks := 0;
       while Acknowledged_Blocks < 1 loop
          declare
-            Req : Cai.Block.Request := Block_Client.Block_Client.Next (Client);
+            Req : Block_Client.Block_Client.Request := Block_Client.Block_Client.Next (Client);
          begin
             if Req.Kind = Cai.Block.Write then
                Gnat.Io.Put_Line ("Writing 2 blocks " &
@@ -106,7 +106,7 @@ package body Ada_Block_Test is
       Acknowledged_Blocks := 0;
       while Acknowledged_Blocks < 1 loop
          declare
-            Req : Cai.Block.Request := Block_Client.Block_Client.Next (Client);
+            Req : Block_Client.Block_Client.Request := Block_Client.Block_Client.Next (Client);
          begin
             if Req.Kind = Cai.Block.Read then
                if Req.Status = Cai.Block.Ok then

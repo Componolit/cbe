@@ -65,7 +65,7 @@ package body Cai.Block.Server is
       else
          R.Status := Error;
       end if;
-      Acknowledge (D, R, D.Context);
+      Acknowledge (D, Cai.Block.Request (R), D.Context);
    end Read;
 
    procedure Write (D : in out Component.Block_Server_Device; B : Buffer; R : in out Request)
@@ -85,7 +85,7 @@ package body Cai.Block.Server is
       else
          R.Status := Error;
       end if;
-      Acknowledge (D, R, D.Context);
+      Acknowledge (D, Cai.Block.Request (R), D.Context);
    end Write;
 
    procedure Sync (D : in out Component.Block_Server_Device)
