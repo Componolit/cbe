@@ -1,7 +1,6 @@
 TARGET := cbe-block_server
 SRC_CC := main.cc
-SRC_ADB := cai-block-server.adb
-SRC_ADS := cai-component.ads
+SRC_ADB := component.adb
 INC_DIR := $(PRG_DIR)
-LIBS := base spark ada_interface ada_interface-block-server
+LIBS := base spark ada_interface
 CC_CXX_OPT += -Wno-attributes
