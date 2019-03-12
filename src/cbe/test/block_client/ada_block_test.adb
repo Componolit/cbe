@@ -10,7 +10,7 @@ use all type Cai.Block.Unsigned_Long;
 package body Ada_Block_Test is
 
    procedure Run is
-      Client : Cai.Block.Device := Block_Client.Block_Client.Create_Device;
+      Client : Cai.Block.Client_Session := Block_Client.Block_Client.Create;
       subtype Block_Buffer is Cai.Block.Buffer (1 .. 4096);
       subtype Block_String is String (1 .. Block_Buffer'Length);
       function Convert_Block is new Ada.Unchecked_Conversion (Block_Buffer, Block_String);
@@ -21,7 +21,7 @@ package body Ada_Block_Test is
       Block_Size : Cai.Block.Size;
       S : Block_Client.State;
    begin
-      Block_Client.Block_Client.Initialize_Device (Client, "", S);
+      Block_Client.Block_Client.Initialize (Client, "ada test client", S);
       Block_Size := Block_Client.Block_Client.Block_Size (Client);
       if Block_Size > Block_Buffer'Length then
          Gnat.Io.Put_Line ("ERROR: Block size too big");
@@ -123,7 +123,7 @@ package body Ada_Block_Test is
          end;
       end loop;
       Gnat.Io.Put_Line ("Reading finished.");
-      Block_Client.Block_Client.Finalize_Device (Client);
+      Block_Client.Block_Client.Finalize (Client);
    end Run;
 
 end Ada_Block_Test;

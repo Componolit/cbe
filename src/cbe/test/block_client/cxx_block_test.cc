@@ -8,7 +8,7 @@ Cxx_block_test::Cxx_block_test() : _block()
 void Cxx_block_test::run()
 {
     Genode::memset(_buffer, '\0', sizeof(_buffer));
-    _block.initialize();
+    _block.initialize("c++ test client");
     Genode::log("Block device with ", _block.block_count(), " blocks of size ", _block.block_size());
     if(_block.block_size() > 4096)
     {
