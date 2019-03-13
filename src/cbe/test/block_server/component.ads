@@ -5,29 +5,23 @@ with Cai.Block.Dispatcher;
 
 package Component is
 
-   type State is record
-      Dispatcher : Cai.Block.Dispatcher_Session;
-      Server : Cai.Block.Server_Session;
-   end record;
-
    procedure Construct
       with
       Export,
       Convention => C,
       External_Name => "ada_component_construct";
 
-   procedure Event (S : in out State);
-   function Block_Count (S : State) return Cai.Block.Count;
-   function Block_Size (S : State) return Cai.Block.Size;
-   function Writable (S : State) return Boolean;
-   function Maximal_Transfer_Size (S : State) return Cai.Block.Unsigned_Long;
-   procedure Initialize (S : in out Cai.Block.Server_Session; L : String; C : in out State);
-   procedure Finalize (S : in out Cai.Block.Server_Session);
+   procedure Event;
+   function Block_Count (S : Cai.Block.Server_Instance) return Cai.Block.Count;
+   function Block_Size (S : Cai.Block.Server_Instance) return Cai.Block.Size;
+   function Writable (S : Cai.Block.Server_Instance) return Boolean;
+   function Maximal_Transfer_Size (S : Cai.Block.Server_Instance) return Cai.Block.Unsigned_Long;
+   procedure Initialize (S : Cai.Block.Server_Instance; L : String);
+   procedure Finalize (S : Cai.Block.Server_Instance);
 
-   procedure Request (S : in out State);
+   procedure Request;
 
-   package Block_Server is new Cai.Block.Server (State,
-                                                 Event,
+   package Block_Server is new Cai.Block.Server (Event,
                                                  Block_Count,
                                                  Block_Size,
                                                  Writable,
