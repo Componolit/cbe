@@ -3,32 +3,20 @@
 #include <terminal_session/connection.h>
 #include <util/reconstructible.h>
 
-#include <cai_block_server.h>
-
 Genode::Env *component_env;
 Genode::Constructible<Terminal::Connection> _terminal;
 Terminal::Connection *__genode_terminal;
 
 extern "C" void adainit();
-
-extern "C" {
-
-    void log_uint(Genode::uint64_t u)
-    {
-        Genode::log(__func__, " ", u);
-    }
-
-}
+extern "C" void ada_component_construct();
 
 struct Main
 {
-    Block_Server_Main _block;
 
-    Main(Genode::Env &env) :
-        _block(env)
+    Main(Genode::Env &)
     {
         Genode::log("Block proxy");
-        _block.announce();
+        ada_component_construct();
     }
 };
 
