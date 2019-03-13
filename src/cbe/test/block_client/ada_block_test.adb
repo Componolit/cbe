@@ -19,9 +19,8 @@ package body Ada_Block_Test is
       Read_Req : Block_Client.Block_Client.Request (Kind => Cai.Block.Read);
       Acknowledged_Blocks : Integer;
       Block_Size : Cai.Block.Size;
-      S : Block_Client.State;
    begin
-      Block_Client.Block_Client.Initialize (Client, "ada test client", S);
+      Block_Client.Block_Client.Initialize (Client, "ada test client");
       Block_Size := Block_Client.Block_Client.Block_Size (Client);
       if Block_Size > Block_Buffer'Length then
          Gnat.Io.Put_Line ("ERROR: Block size too big");
