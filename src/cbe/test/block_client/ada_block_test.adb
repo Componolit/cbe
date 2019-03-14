@@ -17,8 +17,22 @@ package body Ada_Block_Test is
       Buf : Block_Buffer := (others => 0);
       Write_Req : Block_Client.Block_Client.Request (Kind => Cai.Block.Write);
       Read_Req : Block_Client.Block_Client.Request (Kind => Cai.Block.Read);
+      Sync_Req : constant Block_Client.Block_Client.Request (Kind => Cai.Block.Sync) := (Kind => Cai.Block.Sync, Priv => Cai.Block.Null_Data);
       Acknowledged_Blocks : Integer;
       Block_Size : Cai.Block.Size;
+
+      procedure Wait_For_Ready with
+         Pre => Block_Client.Block_Client.Initialized (Client),
+         Post => Block_Client.Block_Client.Ready (Client);
+
+      procedure Wait_For_Ready
+      is
+      begin
+         while not Block_Client.Block_Client.Ready (Client) loop
+            null;
+         end loop;
+      end Wait_For_Ready;
+
    begin
       Block_Client.Block_Client.Initialize (Client, "ada test client");
       Block_Size := Block_Client.Block_Client.Block_Size (Client);
@@ -29,12 +43,17 @@ package body Ada_Block_Test is
       Write_Req.Start := 1;
       Write_Req.Length := 1;
       Buf (1 .. Cai.Block.Unsigned_Long (Block_Size)) := (others => Cai.Block.Byte (Character'Pos('a')));
-      Block_Client.Block_Client.Submit_Write (Client, Write_Req, Buf (1 .. Cai.Block.Unsigned_Long (Block_Size)));
+      Wait_For_Ready;
+      Block_Client.Block_Client.Enqueue_Write (Client, Write_Req, Buf (1 .. Cai.Block.Unsigned_Long (Block_Size)));
       Write_Req.Start := 3;
-      Block_Client.Block_Client.Submit_Write (Client, Write_Req, Buf (1 .. Cai.Block.Unsigned_Long (Block_Size)));
+      Wait_For_Ready;
+      Block_Client.Block_Client.Enqueue_Write (Client, Write_Req, Buf (1 .. Cai.Block.Unsigned_Long (Block_Size)));
       Buf (1 .. Cai.Block.Unsigned_Long (Block_Size)) := (others => Cai.Block.Byte (Character'Pos('d')));
       Write_Req.Start := 2;
-      Block_Client.Block_Client.Submit_Write (Client, Write_Req, Buf (1 .. Cai.Block.Unsigned_Long (Block_Size)));
+      Wait_For_Ready;
+      Block_Client.Block_Client.Enqueue_Write (Client, Write_Req, Buf (1 .. Cai.Block.Unsigned_Long (Block_Size)));
+      Block_Client.Block_Client.Enqueue_Sync (Client, Sync_Req);
+      Block_Client.Block_Client.Submit (Client);
       Acknowledged_Blocks := 0;
       while Acknowledged_Blocks < 3 loop
          declare
@@ -44,20 +63,23 @@ package body Ada_Block_Test is
                Acknowledged_Blocks := Acknowledged_Blocks + 1;
                Gnat.Io.Put_Line ("Write to block " &
                (if Req.Status = Cai.Block.Ok then " succeeded" else " failed"));
-               Block_Client.Block_Client.Acknowledge (Client, Req);
+               Block_Client.Block_Client.Release (Client, Req);
             end if;
          end;
       end loop;
       Gnat.Io.Put_Line ("Writing finished.");
-      Block_Client.Block_Client.Sync (Client);
       Gnat.Io.Put_Line ("Reading...");
       Read_Req.Start := 1;
       Read_Req.Length := 1;
-      Block_Client.Block_Client.Submit_Read (Client, Read_Req);
+      Wait_For_Ready;
+      Block_Client.Block_Client.Enqueue_Read (Client, Read_Req);
       Read_Req.Start := 2;
-      Block_Client.Block_Client.Submit_Read (Client, Read_Req);
+      Wait_For_Ready;
+      Block_Client.Block_Client.Enqueue_Read (Client, Read_Req);
       Read_Req.Start := 3;
-      Block_Client.Block_Client.Submit_Read (Client, Read_Req);
+      Wait_For_Ready;
+      Block_Client.Block_Client.Enqueue_Read (Client, Read_Req);
+      Block_Client.Block_Client.Submit (Client);
       Acknowledged_Blocks := 0;
       while Acknowledged_Blocks < 3 loop
          declare
@@ -73,7 +95,7 @@ package body Ada_Block_Test is
                if Req.Status = Cai.Block.Ok then
                   Gnat.Io.Put_Line (Convert_Block (Buf) (1 .. Standard.Integer (Block_Size)));
                end if;
-               Block_Client.Block_Client.Acknowledge (Client, Req);
+               Block_Client.Block_Client.Release (Client, Req);
             end if;
          end;
       end loop;
@@ -82,7 +104,10 @@ package body Ada_Block_Test is
       Write_Req.Start := 4;
       Write_Req.Length := 2;
       Buf (1 .. Cai.Block.Unsigned_Long (Block_Size) * Cai.Block.Unsigned_Long (Write_Req.Length)) := (others => Cai.Block.Byte (Character'Pos ('x')));
-      Block_Client.Block_Client.Submit_Write (Client, Write_Req, Buf (1 .. Cai.Block.Unsigned_Long (Block_Size) * Cai.Block.Unsigned_Long (Write_Req.Length)));
+      Wait_For_Ready;
+      Block_Client.Block_Client.Enqueue_Write (Client, Write_Req, Buf (1 .. Cai.Block.Unsigned_Long (Block_Size) * Cai.Block.Unsigned_Long (Write_Req.Length)));
+      Block_Client.Block_Client.Enqueue_Sync (Client, Sync_Req);
+      Block_Client.Block_Client.Submit (Client);
       Acknowledged_Blocks := 0;
       while Acknowledged_Blocks < 1 loop
          declare
@@ -91,17 +116,18 @@ package body Ada_Block_Test is
             if Req.Kind = Cai.Block.Write then
                Gnat.Io.Put_Line ("Writing 2 blocks " &
                (if Req.Status = Cai.Block.Ok then "succeeded" else "failed"));
-               Block_Client.Block_Client.Acknowledge (Client, Req);
+               Block_Client.Block_Client.Release (Client, Req);
                Acknowledged_Blocks := 1;
             end if;
          end;
       end loop;
       Gnat.Io.Put_Line ("Writing finished.");
-      Block_Client.Block_Client.Sync (Client);
       Gnat.Io.Put_Line ("Reading 2 block request...");
       Read_Req.Start := 4;
       Read_Req.Length := 2;
-      Block_Client.Block_Client.Submit_Read (Client, Read_Req);
+      Wait_For_Ready;
+      Block_Client.Block_Client.Enqueue_Read (Client, Read_Req);
+      Block_Client.Block_Client.Submit (Client);
       Acknowledged_Blocks := 0;
       while Acknowledged_Blocks < 1 loop
          declare
@@ -116,7 +142,7 @@ package body Ada_Block_Test is
                if Req.Status = Cai.Block.Ok then
                   Gnat.Io.Put_Line (Convert_Block (Buf) (1 .. Standard.Integer (Block_Size * Cai.Block.Size (Req.Length))));
                end if;
-               Block_Client.Block_Client.Acknowledge (Client, Req);
+               Block_Client.Block_Client.Release (Client, Req);
                Acknowledged_Blocks := Acknowledged_Blocks + 1;
             end if;
          end;

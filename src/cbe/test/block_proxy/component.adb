@@ -80,11 +80,9 @@ package body Component is
    begin
       Store (R, Success);
       if Success then
-         Block_Server.Write (Server, R, B, Success);
-         if Success then
-            Block_Client.Submit_Write (Client, WR, B);
-            Block_Server.Discard (Server);
-         end if;
+         Block_Server.Write (Server, R, B);
+         Block_Client.Enqueue_Write (Client, WR, B);
+         Block_Server.Discard (Server);
       end if;
    end Handle_Write;
 
@@ -99,7 +97,7 @@ package body Component is
    begin
       Store (R, Success);
       if Success then
-         Block_Client.Submit_Read (Client, WR);
+         Block_Client.Enqueue_Read (Client, WR);
          Block_Server.Discard (Server);
       end if;
    end Handle_Read;
@@ -125,6 +123,7 @@ package body Component is
             end case;
             exit when R.Kind = Cai.Block.None;
          end loop;
+         Block_Client.Submit (Client);
 
          loop
             A := Block_Client.Next (Client);
@@ -139,7 +138,7 @@ package body Component is
                   else
                      A.Status := Cai.Block.Error;
                   end if;
-                  Block_Client.Acknowledge (Client, A);
+                  Block_Client.Release (Client, A);
                when Cai.Block.Read =>
                   declare
                      B : Cai.Block.Buffer (1 .. A.Length * Block_Client.Block_Size (Client));
@@ -150,15 +149,15 @@ package body Component is
                         Block_Client.Read (Client, A, B);
                         R.Status := A.Status;
                         if R.Status = Cai.Block.Ok then
-                           Block_Server.Read (Server, R, B, Success);
-                           R.Status := (if Success then Cai.Block.Ok else Cai.Block.Error);
+                           Block_Server.Read (Server, R, B);
+                           R.Status := Cai.Block.Ok;
                         end if;
                         Block_Server.Acknowledge (Server, R);
                      else
                         A.Status := Cai.Block.Error;
                      end if;
                   end;
-                  Block_Client.Acknowledge (Client, A);
+                  Block_Client.Release (Client, A);
                when others =>
                   null;
             end case;

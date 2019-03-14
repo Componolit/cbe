@@ -37,8 +37,8 @@ package body Component is
             Buf (Buf'First + (I - R.Start) * Block'Length ..
                Buf'First + ((I - R.Start) + 1) * Block'Length - 1) := Ram_Disk (I);
          end loop;
-         Block_Server.Read (Server, R, Buf, Success);
-         R.Status := (if Success then Cai.Block.Ok else Cai.Block.Error);
+         Block_Server.Read (Server, R, Buf);
+         R.Status := Cai.Block.Ok;
       else
          R.Status := Cai.Block.Error;
       end if;
@@ -55,15 +55,13 @@ package body Component is
          R.Start in Ram_Disk'Range and then
          R.Start + (R.Length - 1) in Ram_Disk'Range
       then
-         Block_Server.Write (Server, R, B, Success);
-         if Success then
-            for I in Cai.Block.Id range R.Start .. R.Start + (R.Length - 1) loop
-               Ram_Disk (I) :=
-                  B (B'First + (I - R.Start) * Block'Length ..
-                     B'First + ((I - R.Start) + 1) * Block'Length - 1);
-            end loop;
-            R.Status := Cai.Block.Ok;
-         end if;
+         Block_Server.Write (Server, R, B);
+         for I in Cai.Block.Id range R.Start .. R.Start + (R.Length - 1) loop
+            Ram_Disk (I) :=
+               B (B'First + (I - R.Start) * Block'Length ..
+                  B'First + ((I - R.Start) + 1) * Block'Length - 1);
+         end loop;
+         R.Status := Cai.Block.Ok;
       end if;
    end Write;
 

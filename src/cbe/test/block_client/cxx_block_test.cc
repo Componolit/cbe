@@ -18,20 +18,21 @@ void Cxx_block_test::run()
     Cai::Block::Request req {Cai::Block::WRITE, {}, 1, 1};
     Genode::memset(_buffer, 'c', _block.block_size());
     req.start = 1;
-    _block.submit_write(req, (Genode::uint8_t *)_buffer, _block.block_size());
+    _block.enqueue_write(req, (Genode::uint8_t *)_buffer);
     Genode::memset(_buffer, '+', _block.block_size());
     req.start = 2;
-    _block.submit_write(req, (Genode::uint8_t *)_buffer, _block.block_size());
+    _block.enqueue_write(req, (Genode::uint8_t *)_buffer);
     Genode::memset(_buffer, '+', _block.block_size());
     req.start = 3;
-    _block.submit_write(req, (Genode::uint8_t *)_buffer, _block.block_size());
+    _block.enqueue_write(req, (Genode::uint8_t *)_buffer);
+    _block.submit();
     int acked_block = 0;
     while(acked_block < 3){
         req = _block.next();
         if(req.kind == Cai::Block::WRITE){
             acked_block++;
             Genode::log("Write to block ", req.start, req.status == Cai::Block::OK ? " succeeded" : " failed");
-            _block.acknowledge(req);
+            _block.release(req);
         }
     }
     Genode::log("Writing finished.");
@@ -39,24 +40,25 @@ void Cxx_block_test::run()
     req.kind = Cai::Block::READ;
     req.start = 1;
     req.length = 1;
-    _block.submit_read(req);
+    _block.enqueue_read(req);
     req.start = 2;
-    _block.submit_read(req);
+    _block.enqueue_read(req);
     req.start = 3;
-    _block.submit_read(req);
+    _block.enqueue_read(req);
+    _block.submit();
     acked_block = 0;
     while(acked_block < 3){
         req = _block.next();
         if(req.kind == Cai::Block::READ){
             acked_block++;
             if(req.status == Cai::Block::OK){
-                _block.read(req, (Genode::uint8_t *)_buffer, _block.block_size());
+                _block.read(req, (Genode::uint8_t *)_buffer);
             }
             Genode::log("Reading from block ", req.start, req.status == Cai::Block::OK ? " succeeded" : " failed");
             if(req.status == Cai::Block::OK){
                 Genode::log(Genode::String<sizeof(_buffer)>(static_cast<const char*>(_buffer)));
             }
-            _block.acknowledge(req);
+            _block.release(req);
         }
     }
     Genode::log("Reading finished...");
