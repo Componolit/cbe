@@ -1,6 +1,4 @@
 
-with Gnat.Io;
-
 with Cai.Block;
 
 use all type Cai.Block.Id;
