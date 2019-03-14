@@ -1,6 +1,5 @@
 
 with Gnat.Io;
-
 with Cai.Block;
 use all type Cai.Block.Id;
 use all type Cai.Block.Count;
@@ -27,16 +26,16 @@ package body Component is
 
    procedure Read (R : in out Block_Server.Request)
    is
-      Buf : Cai.Block.Buffer (1 .. Cai.Block.Unsigned_Long (R.Length * Cai.Block.Count (Block_Size (Block_Server.Get_Instance (Server)))));
+      Buf : Cai.Block.Buffer (1 .. R.Length * Block_Size (Block_Server.Get_Instance (Server)));
       Success : Boolean;
    begin
       if Buf'Length mod Block'Length = 0 and then
          R.Start in Ram_Disk'Range and then
-         R.Start + Cai.Block.Id (R.Length) - 1 in Ram_Disk'Range
+         R.Start + (R.Length - 1) in Ram_Disk'Range
       then
-         for I in Cai.Block.Id range R.Start .. R.Start + Cai.Block.Id (R.Length) - 1 loop
-            Buf (Buf'First + Cai.Block.Unsigned_Long (I - R.Start) * Block'Length ..
-               Buf'First + Cai.Block.Unsigned_Long (I - R.Start + 1) * Block'Length - 1) := Ram_Disk (I);
+         for I in Cai.Block.Id range R.Start .. R.Start + (R.Length - 1) loop
+            Buf (Buf'First + (I - R.Start) * Block'Length ..
+               Buf'First + ((I - R.Start) + 1) * Block'Length - 1) := Ram_Disk (I);
          end loop;
          Block_Server.Read (Server, R, Buf, Success);
          R.Status := (if Success then Cai.Block.Ok else Cai.Block.Error);
@@ -54,14 +53,14 @@ package body Component is
       if
          B'Length mod Block'Length = 0 and then
          R.Start in Ram_Disk'Range and then
-         R.Start + Cai.Block.Id (R.Length) - 1 in Ram_Disk'Range
+         R.Start + (R.Length - 1) in Ram_Disk'Range
       then
          Block_Server.Write (Server, R, B, Success);
          if Success then
-            for I in Cai.Block.Id range R.Start .. R.Start + Cai.Block.Id (R.Length) - 1 loop
+            for I in Cai.Block.Id range R.Start .. R.Start + (R.Length - 1) loop
                Ram_Disk (I) :=
-                  B (B'First + Cai.Block.Unsigned_Long (I - R.Start) * Block'Length ..
-                     B'First + Cai.Block.Unsigned_Long (I - R.Start + 1) * Block'Length - 1);
+                  B (B'First + (I - R.Start) * Block'Length ..
+                     B'First + ((I - R.Start) + 1) * Block'Length - 1);
             end loop;
             R.Status := Cai.Block.Ok;
          end if;

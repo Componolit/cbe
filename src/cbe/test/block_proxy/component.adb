@@ -71,7 +71,7 @@ package body Component is
    procedure Handle_Write (R : Block_Server.Request)
    is
       Success : Boolean;
-      B : Cai.Block.Buffer (1 .. Cai.Block.Unsigned_Long (R.Length * Cai.Block.Count (Block_Size (Block_Server.Get_Instance (Server)))));
+      B : Cai.Block.Buffer (1 .. R.Length * Block_Size (Block_Server.Get_Instance (Server)));
       WR : Block_Client.Request := (Kind => Cai.Block.Write,
                                     Priv => Cai.Block.Null_Data,
                                     Start => R.Start,
@@ -142,7 +142,7 @@ package body Component is
                   Block_Client.Acknowledge (Client, A);
                when Cai.Block.Read =>
                   declare
-                     B : Cai.Block.Buffer (1 .. Cai.Block.Unsigned_Long (A.Length * Cai.Block.Count (Block_Client.Block_Size (Client))));
+                     B : Cai.Block.Buffer (1 .. A.Length * Block_Client.Block_Size (Client));
                      Success : Boolean;
                   begin
                      Load (R, A.Kind, A.Start);
