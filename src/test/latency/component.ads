@@ -1,5 +1,7 @@
 
-package Component is
+package Component with
+   SPARK_Mode
+is
 
    procedure Construct with
       Export,
