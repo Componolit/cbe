@@ -26,6 +26,32 @@ package body Test is
       return Cai.Log.Image (Ada.Real_Time.To_Duration (Data (Item).Finish - Data (Item).Start));
    end Image;
 
+   function Average (Data : Burst) return Duration
+   is
+      D : Duration := Duration (0);
+   begin
+      for R of Data loop
+         D := D + Ada.Real_Time.To_Duration (R.Finish - R.Start);
+      end loop;
+      D := D / Data'Length;
+      return D;
+   end Average;
+
+   function Jitter (Data : Burst) return Duration
+   is
+      J : Duration := Duration (0);
+   begin
+      if Data'Length < 2 then
+         return J;
+      end if;
+      for I in Long_Integer range Data'First + 1 .. Data'Last loop
+         J := J + abs (Ada.Real_Time.To_Duration (Data (I).Finish - Data (I).Start)
+                       - Ada.Real_Time.To_Duration (Data (I - 1).Finish - Data (I - 1).Start));
+      end loop;
+      J := J / (Data'Length - 1);
+      return J;
+   end Jitter;
+
    Data : Burst (0 .. Long_Integer (Request_Count - 1)) := (others => (0,
                                                                        Ada.Real_Time.Time_First,
                                                                        Ada.Real_Time.Time_First));
@@ -88,9 +114,12 @@ package body Test is
    is
    begin
       if Sent = Data'Last and Received = Data'Last then
-         for I in Data'Range loop
-            Cai.Log.Client.Info (Log, Cai.Log.Image (I) & ": " & Image (I, Data));
-         end loop;
+         Cai.Log.Client.Info (Log, "Sent " & Cai.Log.Image (Long_Integer (Data'Length)) & " write requests with "
+                                   & Cai.Log.Image (Average (Data)) & "µs latency and "
+                                   & Cai.Log.Image (Jitter (Data)) & "µs jitter");
+--         for I in Data'Range loop
+--            Cai.Log.Client.Info (Log, Cai.Log.Image (I) & ": " & Image (I, Data));
+--         end loop;
       end if;
    end Evaluate;
 
