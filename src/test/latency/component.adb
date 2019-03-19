@@ -15,10 +15,11 @@ is
    Client : Cai.Block.Client_Session := Block_Client.Create;
    Log : Cai.Log.Client_Session := Cai.Log.Client.Create;
 
-   package Iter is new Iteration (Block_Client, 100);
+   package Write_Iter is new Iteration (Block_Client, 100, Cai.Block.Write);
+   package Read_Iter is new Iteration (Block_Client, 100, Cai.Block.Read);
 
-   Write_Data : Iter.Test := Iter.Create (0, Cai.Block.Write);
-   Read_Data : Iter.Test := Iter.Create (0, Cai.Block.Read);
+   Write_Data : Write_Iter.Test := Write_Iter.Create (0);
+   Read_Data : Read_Iter.Test := Read_Iter.Create (0);
 
    procedure Construct is
    begin
@@ -32,13 +33,13 @@ is
    begin
       if not Write_Data.Finished then
          Cai.Log.Client.Info (Log, "Running write test");
-         Iter.Receive (Client, Write_Data);
-         Iter.Send (Client, Write_Data);
+         Write_Iter.Receive (Client, Write_Data);
+         Write_Iter.Send (Client, Write_Data);
       end if;
       if Write_Data.Finished and not Read_Data.Finished then
          Cai.Log.Client.Info (Log, "Running read test");
-         Iter.Receive (Client, Read_Data);
-         Iter.Send (Client, Read_Data);
+         Read_Iter.Receive (Client, Read_Data);
+         Read_Iter.Send (Client, Read_Data);
       end if;
       if Write_Data.Finished and Read_Data.Finished then
          Cai.Log.Client.Info (Log, "Tests finished");

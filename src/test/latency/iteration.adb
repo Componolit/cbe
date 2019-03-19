@@ -27,14 +27,12 @@ package body Iteration is
       Data (Long_Integer (Item.Start - Offset)).Finish := Ada.Real_Time.Clock;
    end Finish;
 
-   function Create (Offset    : Cai.Block.Count;
-                    Operation : Cai.Block.Request_Kind) return Test
+   function Create (Offset : Cai.Block.Count) return Test
    is
    begin
       return Test' (Sent      => -1,
                     Received  => -1,
                     Offset    => Offset,
-                    Operation => Operation,
                     Finished  => False,
                     Buffer    => (others => 0),
                     Data      => (others => (0, Ada.Real_Time.Time_First, Ada.Real_Time.Time_First)));
@@ -61,7 +59,7 @@ package body Iteration is
                   Client.Ready (C, Write_Request)
                   and Client.Ready (C, Read_Request)
                then
-                  case T.Operation is
+                  case Operation is
                      when Cai.Block.Write =>
                         Start (Write_Request, T.Offset, T.Data);
                         Client.Enqueue_Write (C, Write_Request,
@@ -94,7 +92,7 @@ package body Iteration is
             declare
                R : Client.Request := Client.Next (C);
             begin
-               if R.Kind = T.Operation then
+               if R.Kind = Operation then
                   if R.Kind = Cai.Block.Read then
                      Client.Read (C, R, T.Buffer (1 .. R.Length * Client.Block_Size (C)));
                   end if;
