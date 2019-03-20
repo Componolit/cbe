@@ -1,6 +1,7 @@
 with Ada.Real_Time;
 with Cai.Block;
 with Cai.Block.Client;
+with Cai.Log;
 
 use all type Cai.Block.Id;
 use all type Cai.Block.Count;
@@ -12,7 +13,6 @@ generic
 package Iteration is
 
    type Request is record
-      Block : Cai.Block.Id;
       Start : Ada.Real_Time.Time;
       Finish : Ada.Real_Time.Time;
    end record;
@@ -33,5 +33,7 @@ package Iteration is
    procedure Send (C : Cai.Block.Client_Session; T : in out Test);
 
    procedure Receive (C : Cai.Block.Client_Session; T : in out Test);
+
+   procedure Xml (Xml_Log : in out Cai.Log.Client_Session; B : Burst; Offset : Cai.Block.Count);
 
 end Iteration;

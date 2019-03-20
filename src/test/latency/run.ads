@@ -1,6 +1,7 @@
 
 with Cai.Block;
 with Cai.Block.Client;
+with Cai.Log;
 with Iteration;
 
 generic
@@ -21,5 +22,7 @@ package Run is
    procedure Run (C : in out Cai.Block.Client_Session; R : in out Run_Type);
 
    function Finished (R : Run_Type) return Boolean;
+
+   procedure Xml (Xml_Log : in out Cai.Log.Client_Session; R : Run_Type);
 
 end Run;

@@ -1,6 +1,7 @@
 
-with Cai.Log.Client;
+with Ada.Unchecked_Conversion;
 with Cai.Block;
+with Cai.Log.Client;
 
 use all type Cai.Block.Request_Kind;
 
@@ -35,7 +36,7 @@ package body Iteration is
                     Offset    => Offset,
                     Finished  => False,
                     Buffer    => (others => 0),
-                    Data      => (others => (0, Ada.Real_Time.Time_First, Ada.Real_Time.Time_First)));
+                    Data      => (others => (Ada.Real_Time.Time_First, Ada.Real_Time.Time_First)));
    end Create;
 
    procedure Send (C : Cai.Block.Client_Session; T : in out Test) is
@@ -113,6 +114,23 @@ package body Iteration is
          T.Finished := True;
       end if;
    end Receive;
+
+   procedure Xml (Xml_Log : in out Cai.Log.Client_Session; R : Request; Block : Cai.Block.Id)
+   is
+      function Time_Conversion is new Ada.Unchecked_Conversion (Ada.Real_Time.Time, Duration);
+   begin
+      Cai.Log.Client.Info (Xml_Log, "<request id=" & Cai.Log.Image (Long_Integer (Block))
+                                    & " sent=" & Cai.Log.Image (Time_Conversion (R.Start)) & " received="
+                                    & Cai.Log.Image (Time_Conversion (R.Finish)) & " />");
+   end Xml;
+
+   procedure Xml (Xml_Log : in out Cai.Log.Client_Session; B : Burst; Offset : Cai.Block.Count)
+   is
+   begin
+      for I in B'Range loop
+         Xml (Xml_Log, B (I), Cai.Block.Id (I) + Offset);
+      end loop;
+   end Xml;
 
 begin
    Cai.Log.Client.Initialize (Log, "Test " & Cai.Log.Image (Integer (Request_Count)));

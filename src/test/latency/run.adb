@@ -1,4 +1,6 @@
 
+with Cai.Log.Client;
+
 package body Run is
 
    function Create return Run_Type
@@ -28,7 +30,7 @@ package body Run is
 
    procedure Run (C : in out Cai.Block.Client_Session; R : in out Run_Type)
    is
-      F : Integer := First (R);
+      F : constant Integer := First (R);
    begin
       if F in R'Range then
          Iter.Receive (C, R (F));
@@ -49,5 +51,23 @@ package body Run is
       end loop;
       return Fin;
    end Finished;
+
+   procedure Xml (Xml_Log : in out Cai.Log.Client_Session; R : Run_Type)
+   is
+   begin
+      Cai.Log.Client.Info (Xml_Log, "<run burst_size=" & Cai.Log.Image (Long_Integer (R (R'First).Data'Length))
+                                    & " iterations=" & Cai.Log.Image (Long_Integer (R'Length)) & " operation="
+                                    & (case Operation is
+                                          when Cai.Block.None | Cai.Block.Sync => "INVALID",
+                                          when Cai.Block.Read => "READ",
+                                          when Cai.Block.Write => "WRITE")
+                                    & " transfer_size=1 />");
+      for I in R'Range loop
+         Cai.Log.Client.Info (Xml_Log, "<iteration num=" & Cai.Log.Image (I) & " />");
+         Iter.Xml (Xml_Log, R (I).Data, R (I).Offset);
+         Cai.Log.Client.Info (Xml_Log, "</iteration>");
+      end loop;
+      Cai.Log.Client.Info (Xml_Log, "</run>");
+   end Xml;
 
 end Run;
