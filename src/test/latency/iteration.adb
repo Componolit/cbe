@@ -53,8 +53,8 @@ package body Iteration is
       if T.Sent < T.Data'Last then
          if Client.Initialized (C) then
             for I in T.Sent .. T.Data'Last - 1 loop
-               Read_Request.Start := Cai.Block.Id (I + 1);
-               Write_Request.Start := Cai.Block.Id (I + 1);
+               Read_Request.Start := Cai.Block.Id (I + 1) + T.Offset;
+               Write_Request.Start := Cai.Block.Id (I + 1) + T.Offset;
                if
                   Client.Ready (C, Write_Request)
                   and Client.Ready (C, Read_Request)

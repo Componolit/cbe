@@ -3,7 +3,7 @@ with Cai.Log;
 with Cai.Log.Client;
 with Cai.Block;
 with Cai.Block.Client;
-with Iteration;
+with Run;
 
 package body Component with
    SPARK_Mode
@@ -15,33 +15,33 @@ is
    Client : Cai.Block.Client_Session := Block_Client.Create;
    Log : Cai.Log.Client_Session := Cai.Log.Client.Create;
 
-   package Write_Iter is new Iteration (Block_Client, 100, Cai.Block.Write);
-   package Read_Iter is new Iteration (Block_Client, 100, Cai.Block.Read);
+   package Write_Run is new Run (Block_Client, 100, 4, Cai.Block.Write);
+   package Read_Run is new Run (Block_Client, 100, 4, Cai.Block.Read);
 
-   Write_Data : Write_Iter.Test := Write_Iter.Create (0);
-   Read_Data : Read_Iter.Test := Read_Iter.Create (0);
+   Write_Data : Write_Run.Run_Type := Write_Run.Create;
+   Read_Data : Read_Run.Run_Type := Read_Run.Create;
 
    procedure Construct is
    begin
       Cai.Log.Client.Initialize (Log, "Latency");
       Cai.Log.Client.Info (Log, "CBE Latency test");
       Block_Client.Initialize (Client, "");
+      Write_Run.Initialize (Write_Data);
+      Read_Run.Initialize (Read_Data);
       Event;
    end Construct;
 
    procedure Event is
    begin
-      if not Write_Data.Finished then
-         Cai.Log.Client.Info (Log, "Running write test");
-         Write_Iter.Receive (Client, Write_Data);
-         Write_Iter.Send (Client, Write_Data);
+      if not Write_Run.Finished (Write_Data) then
+         Cai.Log.Client.Info (Log, "Run: Write");
+         Write_Run.Run (Client, Write_Data);
       end if;
-      if Write_Data.Finished and not Read_Data.Finished then
-         Cai.Log.Client.Info (Log, "Running read test");
-         Read_Iter.Receive (Client, Read_Data);
-         Read_Iter.Send (Client, Read_Data);
+      if Write_Run.Finished (Write_Data) and not Read_Run.Finished (Read_Data) then
+         Cai.Log.Client.Info (Log, "Run: Read");
+         Read_Run.Run (Client, Read_Data);
       end if;
-      if Write_Data.Finished and Read_Data.Finished then
+      if Write_Run.Finished (Write_Data) and Read_Run.Finished (Read_Data) then
          Cai.Log.Client.Info (Log, "Tests finished");
       end if;
    end;
