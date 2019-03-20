@@ -7,7 +7,7 @@ project Permutation is
     for Main use ("test.adb", "main.adb");
 
    package Builder is
-      for Switches ("Ada") use ("-O3");
+      for Switches ("Ada") use ("-O2");
    end Builder;
 
 end Permutation;
