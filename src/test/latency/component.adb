@@ -36,11 +36,9 @@ is
    procedure Event is
    begin
       if not Write_Run.Finished (Write_Data) then
-         Cai.Log.Client.Info (Log, "Run: Write");
          Write_Run.Run (Client, Write_Data);
       end if;
       if Write_Run.Finished (Write_Data) and not Read_Run.Finished (Read_Data) then
-         Cai.Log.Client.Info (Log, "Run: Read");
          Read_Run.Run (Client, Read_Data);
       end if;
       if Write_Run.Finished (Write_Data) and Read_Run.Finished (Read_Data) then
