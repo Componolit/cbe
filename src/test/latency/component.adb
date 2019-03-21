@@ -25,7 +25,7 @@ is
    procedure Construct is
    begin
       Cai.Log.Client.Initialize (Log, "Latency");
-      Cai.Log.Client.Info (Log, "CBE Latency test");
+      Cai.Log.Client.Info (Log, "Latency");
       Cai.Log.Client.Initialize (Xml, "XML");
       Block_Client.Initialize (Client, "");
       Write_Run.Initialize (Write_Data);
