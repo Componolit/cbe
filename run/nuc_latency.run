@@ -5,6 +5,9 @@ set build_components {
     drivers/vga_log
     drivers/usb
     drivers/ahci
+    server/part_block
+    server/rump_fs
+    server/fs_log
     test/block/server
     test/latency
 }
@@ -56,6 +59,7 @@ append config {
         <resource name="RAM" quantum="16M"/>
         <route>
             <service name="LOG" label="Latency"><child name="vga_log_drv"/></service>
+            <service name="LOG" label="XML"><child name="fs_log"/></service>
             <service name="Block"><child name="test-block-server"/></service>
             <any-service><parent/><any-child/></any-service>
         </route>
@@ -65,9 +69,51 @@ append config {
         <resource name="RAM" quantum="16M"/>
         <provides>
             <service name="Input"/>
+            <service name="Block"/>
         </provides>
         <config bios_handoff="yes" uhci="yes" ohci="yes" ehci="yes" xhci="yes">
             <hid/>
+            <storage/>
+        </config>
+    </start>
+
+    <start name="part_block">
+        <resource name="RAM" quantum="8M"/>
+        <provides>
+            <service name="Block"/>
+        </provides>
+        <config>
+            <policy label_prefix="rump_fs" partition="2" writeable="yes"/>
+        </config>
+        <route>
+            <service name="LOG"><child name="vga_log_drv"/></service>
+            <service name="Block"><child name="usb_drv"/></service>
+            <any-service><parent/><any-child/></any-service>
+        </route>
+    </start>
+
+    <start name="rump_fs" caps="200">
+        <resource name="RAM" quantum="32M"/>
+        <provides>
+            <service name="File_system"/>
+        </provides>
+        <config fs="ext2fs">
+            <policy label_prefix="fs_log" root="/" writeable="yes"/>
+        </config>
+        <route>
+            <service name="LOG"><child name="vga_log_drv"/></service>
+            <service name="Block"><child name="part_block"/></service>
+            <any-service><parent/><any-child/></any-service>
+        </route>
+    </start>
+
+    <start name="fs_log">
+        <resource name="RAM" quantum="4M"/>
+        <provides>
+            <service name="LOG"/>
+        </provides>
+        <config>
+            <policy label="cbe-test-latency -> XML"/>
         </config>
     </start>
 
@@ -106,6 +152,11 @@ set boot_modules {
     timer
     vga_log_drv
     usb_drv
+    part_block
+    rump_fs
+    rump.lib.so
+    rump_fs.lib.so
+    fs_log
     ahci_drv
     test-block-server
     cbe-test-latency
@@ -115,6 +166,22 @@ append_platform_drv_boot_modules
 
 build_boot_image $boot_modules
 
-append qemu_args " -m 512 -usb -device usb-kbd"
+set image "var/run/nuc_latency.iso.2"
+set cmd "dd if=/dev/zero bs=1M count=64 >> $image"
+puts "creating image..."
+catch { exec sh -c "cp var/run/nuc_latency.iso $image" }
+catch { exec sh -c $cmd }
+set cmd "/sbin/parted --script $image mkpart primary ext2 32MiB 100%"
+puts "creating partition..."
+catch { exec sh -c $cmd }
+set cmd "/sbin/mkfs.ext2 -F -E offset=33554432 $image"
+puts "formatting partition..."
+catch { exec sh -c $cmd }
+
+append qemu_args " -drive if=none,id=disk,file=$image"
+append qemu_args " -usb -device usb-kbd"
+append qemu_args " -device usb-ehci,id=ehci"
+append qemu_args " -device usb-storage,bus=ehci.0,drive=disk"
+append qemu_args " -m 512"
 
 run_genode_until forever
