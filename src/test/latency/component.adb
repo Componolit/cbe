@@ -45,9 +45,9 @@ is
       end if;
       if Write_Run.Finished (Write_Data) and Read_Run.Finished (Read_Data) then
          Cai.Log.Client.Info (Log, "Tests finished");
-         Cai.Log.Client.Info (Xml, "<test name=Latency platform=Genode hardware=Qemu block_size="
+         Cai.Log.Client.Info (Xml, "<test name=""Latency"" platform=""Genode"" hardware=""Qemu"" block_size="""
                                    & Cai.Log.Image (Long_Integer (Block_Client.Block_Size (Client)))
-                                   & " />");
+                                   & """/>");
          Write_Run.Xml (Xml, Write_Data);
          Read_Run.Xml (Xml, Read_Data);
          Cai.Log.Client.Info (Xml, "</test>");

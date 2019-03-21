@@ -39,7 +39,7 @@ package body Iteration is
                     Data      => (others => (Ada.Real_Time.Time_First, Ada.Real_Time.Time_First)));
    end Create;
 
-   procedure Send (C : Cai.Block.Client_Session; T : in out Test) is
+   procedure Send (C : in out Cai.Block.Client_Session; T : in out Test) is
       Read_Request : Client.Request := (Kind => Cai.Block.Read,
                                         Priv => Cai.Block.Null_Data,
                                         Start => 0,
@@ -86,7 +86,7 @@ package body Iteration is
       end if;
    end Send;
 
-   procedure Receive (C : Cai.Block.Client_Session; T : in out Test) is
+   procedure Receive (C : in out Cai.Block.Client_Session; T : in out Test) is
    begin
       if Client.Initialized (C) then
          while T.Received < T.Data'Last loop
@@ -119,9 +119,10 @@ package body Iteration is
    is
       function Time_Conversion is new Ada.Unchecked_Conversion (Ada.Real_Time.Time, Duration);
    begin
-      Cai.Log.Client.Info (Xml_Log, "<request id=" & Cai.Log.Image (Long_Integer (Block))
-                                    & " sent=" & Cai.Log.Image (Time_Conversion (R.Start)) & " received="
-                                    & Cai.Log.Image (Time_Conversion (R.Finish)) & " />");
+      Cai.Log.Client.Info (Xml_Log, "<request id=""" & Cai.Log.Image (Long_Integer (Block))
+                                    & """ sent=""" & Cai.Log.Image (Time_Conversion (R.Start))
+                                    & """ received=""" & Cai.Log.Image (Time_Conversion (R.Finish))
+                                    & """/>");
    end Xml;
 
    procedure Xml (Xml_Log : in out Cai.Log.Client_Session; B : Burst; Offset : Cai.Block.Count)

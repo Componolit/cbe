@@ -30,9 +30,9 @@ package Iteration is
 
    function Create (Offset : Cai.Block.Count) return Test;
 
-   procedure Send (C : Cai.Block.Client_Session; T : in out Test);
+   procedure Send (C : in out Cai.Block.Client_Session; T : in out Test);
 
-   procedure Receive (C : Cai.Block.Client_Session; T : in out Test);
+   procedure Receive (C : in out Cai.Block.Client_Session; T : in out Test);
 
    procedure Xml (Xml_Log : in out Cai.Log.Client_Session; B : Burst; Offset : Cai.Block.Count);
 
