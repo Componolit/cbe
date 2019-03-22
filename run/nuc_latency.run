@@ -48,7 +48,7 @@ append config {
     </start>
 
     <start name="cbe-test-latency">
-        <resource name="RAM" quantum="64M"/>
+        <resource name="RAM" quantum="256M"/>
         <route>
             <service name="LOG" label="Latency"><child name="vga_log_drv"/></service>
             <service name="LOG" label="XML"><child name="fs_log"/></service>
@@ -158,20 +158,20 @@ append_platform_drv_boot_modules
 build_boot_image $boot_modules
 
 set image "var/run/nuc_latency.iso.2"
-set cmd "dd if=/dev/zero bs=1M count=1500 >> $image"
+set cmd "dd if=/dev/zero bs=1M count=64 >> $image"
 puts "creating image..."
-catch { exec sh -c "cp var/run/nuc_latency.iso $image" }
-catch { exec sh -c $cmd }
+exec -ignorestderr sh -c "cp var/run/nuc_latency.iso $image" }
+exec -ignorestderr sh -c $cmd
 set cmd "/sbin/parted --script $image mkpart primary ext2 32MiB 100%"
 puts "creating partition..."
-catch { exec sh -c $cmd }
+exec -ignorestderr sh -c $cmd
 set cmd "/sbin/mkfs.ext2 -F -E offset=33554432 $image"
 puts "formatting partition..."
-catch { exec sh -c $cmd }
+exec -ignorestderr sh -c $cmd
 set testdisk "bin/testdisk.img"
-set cmd "dd if=/dev/zero of=$testdisk bs=1M count=5120"
+set cmd "dd if=/dev/zero of=$testdisk bs=1M count=64"
 puts "creating test disk..."
-catch { exec sh -c $cmd }
+exec -ignorestderr sh -c $cmd
 
 append qemu_args " -drive if=none,id=disk,file=$image"
 append qemu_args " -usb -device usb-kbd"
@@ -182,3 +182,8 @@ append qemu_args " -device ide-hd,drive=disk2,bus=ahci.0"
 append qemu_args " -m 512"
 
 run_genode_until forever
+
+# To flash:
+# parted /dev/sdX resizepart 2 100%
+# e2fsck -f /dev/sdX2
+# resize2fs /dev/sdX2 1800M
