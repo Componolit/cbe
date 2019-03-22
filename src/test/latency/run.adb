@@ -9,11 +9,12 @@ package body Run is
       return Run_Type' (others => Iter.Create (0));
    end Create;
 
-   procedure Initialize (R : in out Run_Type)
+   procedure Initialize (R : in out Run_Type; Sync : Boolean)
    is
    begin
       for I in R'Range loop
          R (I).Offset := Cai.Block.Count ((I - 1) * R (I).Data'Length);
+         R (I).Sync := Sync;
       end loop;
    end Initialize;
 

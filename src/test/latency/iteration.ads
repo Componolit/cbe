@@ -24,6 +24,7 @@ package Iteration is
       Received  : Long_Integer;
       Offset    : Cai.Block.Count;
       Finished  : Boolean;
+      Sync      : Boolean;
       Buffer    : Cai.Block.Buffer (1 .. 4096);
       Data      : Burst (0 .. Long_Integer (Request_Count - 1));
    end record;

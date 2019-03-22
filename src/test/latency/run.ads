@@ -17,7 +17,7 @@ package Run is
 
    function Create return Run_Type;
 
-   procedure Initialize (R : in out Run_Type);
+   procedure Initialize (R : in out Run_Type; Sync : Boolean);
 
    procedure Run (C : in out Cai.Block.Client_Session; R : in out Run_Type; Log : in out Cai.Log.Client_Session);
 

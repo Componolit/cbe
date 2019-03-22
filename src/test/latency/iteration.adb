@@ -33,6 +33,7 @@ package body Iteration is
                     Received  => -1,
                     Offset    => Offset,
                     Finished  => False,
+                    Sync      => True,
                     Buffer    => (others => 0),
                     Data      => (others => (Ada.Real_Time.Time_First, Ada.Real_Time.Time_First)));
    end Create;
@@ -80,6 +81,17 @@ package body Iteration is
          end if;
       end if;
       if T.Sent = T.Data'Last and T.Received = T.Data'Last then
+         if Operation = Cai.Block.Write and T.Sync then
+            declare
+               S : constant Client.Request := (Kind => Cai.Block.Sync, Priv => Cai.Block.Null_Data);
+            begin
+               while not Client.Ready(C, S) loop
+                  null;
+               end loop;
+               Client.Enqueue_Sync (C, S);
+               Client.Submit (C);
+            end;
+         end if;
          T.Finished := True;
       end if;
    end Send;

@@ -28,8 +28,8 @@ is
       Cai.Log.Client.Info (Log, "Latency");
       Cai.Log.Client.Initialize (Xml, "XML");
       Block_Client.Initialize (Client, "");
-      Write_Run.Initialize (Write_Data);
-      Read_Run.Initialize (Read_Data);
+      Write_Run.Initialize (Write_Data, True);
+      Read_Run.Initialize (Read_Data, True);
       Event;
    end Construct;
 
