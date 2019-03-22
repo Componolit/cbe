@@ -15,14 +15,12 @@ package Run is
 
    type Run_Type is array (1 .. Run_Count) of Iter.Test;
 
-   function Create return Run_Type;
-
-   procedure Initialize (R : in out Run_Type; Sync : Boolean);
+   procedure Initialize (R : out Run_Type; Sync : Boolean);
 
    procedure Run (C : in out Cai.Block.Client_Session; R : in out Run_Type; Log : in out Cai.Log.Client_Session);
 
    function Finished (R : Run_Type) return Boolean;
 
-   procedure Xml (Xml_Log : in out Cai.Log.Client_Session; R : Run_Type);
+   procedure Xml (Xml_Log : in out Cai.Log.Client_Session; R : Run_Type; Log : in out Cai.Log.Client_Session);
 
 end Run;

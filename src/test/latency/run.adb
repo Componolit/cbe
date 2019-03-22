@@ -1,20 +1,16 @@
 
+with Cai.Block;
 with Cai.Log.Client;
+
+use all type Cai.Block.Count;
 
 package body Run is
 
-   function Create return Run_Type
-   is
-   begin
-      return Run_Type' (others => Iter.Create (0));
-   end Create;
-
-   procedure Initialize (R : in out Run_Type; Sync : Boolean)
+   procedure Initialize (R : out Run_Type; Sync : Boolean)
    is
    begin
       for I in R'Range loop
-         R (I).Offset := Cai.Block.Count ((I - 1) * R (I).Data'Length);
-         R (I).Sync := Sync;
+         Iter.Initialize (R (I), Cai.Block.Count (I - 1) * R (I).Data'Length, Sync);
       end loop;
    end Initialize;
 
@@ -37,7 +33,7 @@ package body Run is
    begin
       if F in R'Range then
          if not Printed then
-            Cai.Log.Client.Info (Log, "Running iteration " & Cai.Log.Image (F) & " ...");
+            Cai.Log.Client.Info (Log, Cai.Log.Image (F)  & " .. ", False);
             Printed := True;
          end if;
          Iter.Receive (C, R (F), Log);
@@ -60,7 +56,7 @@ package body Run is
       return Fin;
    end Finished;
 
-   procedure Xml (Xml_Log : in out Cai.Log.Client_Session; R : Run_Type)
+   procedure Xml (Xml_Log : in out Cai.Log.Client_Session; R : Run_Type; Log : in out Cai.Log.Client_Session)
    is
    begin
       Cai.Log.Client.Info (Xml_Log, "<run burst_size=""" & Cai.Log.Image (Long_Integer (R (R'First).Data'Length))
@@ -71,6 +67,7 @@ package body Run is
                                                          when Cai.Block.Write => "WRITE")
                                     & """ transfer_size=""1""/>");
       for I in R'Range loop
+         Cai.Log.Client.Info (Log, Cai.Log.Image (I) & " .. ", False);
          Cai.Log.Client.Info (Xml_Log, "<iteration num=""" & Cai.Log.Image (I) & """/>");
          Iter.Xml (Xml_Log, R (I).Data, R (I).Offset);
          Cai.Log.Client.Info (Xml_Log, "</iteration>");

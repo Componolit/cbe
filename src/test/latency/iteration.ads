@@ -19,7 +19,7 @@ package Iteration is
 
    type Burst is array (Long_Integer range <>) of Request;
 
-   type Test is limited record
+   type Test is record
       Sent      : Long_Integer;
       Received  : Long_Integer;
       Offset    : Cai.Block.Count;
@@ -29,7 +29,7 @@ package Iteration is
       Data      : Burst (0 .. Long_Integer (Request_Count - 1));
    end record;
 
-   function Create (Offset : Cai.Block.Count) return Test;
+   procedure Initialize (T : out Test; Offset : Cai.Block.Count; Sync : Boolean);
 
    procedure Send (C : in out Cai.Block.Client_Session; T : in out Test; Log : in out Cai.Log.Client_Session);
 

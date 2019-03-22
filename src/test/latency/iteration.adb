@@ -26,17 +26,19 @@ package body Iteration is
       Data (Long_Integer (Item.Start - Offset)).Finish := Ada.Real_Time.Clock;
    end Finish;
 
-   function Create (Offset : Cai.Block.Count) return Test
+   procedure Initialize (T : out Test; Offset : Cai.Block.Count; Sync : Boolean)
    is
    begin
-      return Test' (Sent      => -1,
-                    Received  => -1,
-                    Offset    => Offset,
-                    Finished  => False,
-                    Sync      => True,
-                    Buffer    => (others => 0),
-                    Data      => (others => (Ada.Real_Time.Time_First, Ada.Real_Time.Time_First)));
-   end Create;
+      T.Sent      := -1;
+      T.Received  := -1;
+      T.Offset    := Offset;
+      T.Finished  := False;
+      T.Sync      := Sync;
+      T.Buffer    := (others => 0);
+      for I in T.Data'Range loop
+         T.Data (I) := (others => Ada.Real_Time.Time_First);
+      end loop;
+   end Initialize;
 
    procedure Send (C : in out Cai.Block.Client_Session; T : in out Test; Log : in out Cai.Log.Client_Session) is
       Read_Request : Client.Request := (Kind => Cai.Block.Read,
