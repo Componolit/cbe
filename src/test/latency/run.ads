@@ -19,7 +19,7 @@ package Run is
 
    procedure Initialize (R : in out Run_Type);
 
-   procedure Run (C : in out Cai.Block.Client_Session; R : in out Run_Type);
+   procedure Run (C : in out Cai.Block.Client_Session; R : in out Run_Type; Log : in out Cai.Log.Client_Session);
 
    function Finished (R : Run_Type) return Boolean;
 

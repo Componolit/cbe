@@ -7,8 +7,6 @@ use all type Cai.Block.Request_Kind;
 
 package body Iteration is
 
-   Log : Cai.Log.Client_Session := Cai.Log.Client.Create;
-
    procedure Start (Item : Client.Request; Offset : Cai.Block.Count; Data : in out Burst) with
       Pre => Long_Integer (Item.Start - Offset) in Data'Range;
 
@@ -39,7 +37,7 @@ package body Iteration is
                     Data      => (others => (Ada.Real_Time.Time_First, Ada.Real_Time.Time_First)));
    end Create;
 
-   procedure Send (C : in out Cai.Block.Client_Session; T : in out Test) is
+   procedure Send (C : in out Cai.Block.Client_Session; T : in out Test; Log : in out Cai.Log.Client_Session) is
       Read_Request : Client.Request := (Kind => Cai.Block.Read,
                                         Priv => Cai.Block.Null_Data,
                                         Start => 0,
@@ -50,11 +48,9 @@ package body Iteration is
                                          Start => 0,
                                          Length => 1,
                                          Status => Cai.Block.Raw);
-      Current_Block : Long_Integer;
    begin
       if T.Sent < T.Data'Last then
          if Client.Initialized (C) then
-            Current_Block := T.Sent + 1 + Long_Integer (T.Offset);
             for I in T.Sent .. T.Data'Last - 1 loop
                Read_Request.Start := Cai.Block.Id (I + 1) + T.Offset;
                Write_Request.Start := Cai.Block.Id (I + 1) + T.Offset;
@@ -76,12 +72,6 @@ package body Iteration is
                   T.Sent := T.Sent + 1;
                else
                   Client.Submit (C);
-                  Cai.Log.Client.Info (Log, "Sent: " & (case Operation is
-                                                         when Cai.Block.Read => "read ",
-                                                         when Cai.Block.Write => "write ",
-                                                         when others => "invalid ")
-                                            & Cai.Log.Image (Current_Block)
-                                            & " .. " & Cai.Log.Image (T.Sent + Long_Integer (T.Offset)));
                   exit;
                end if;
             end loop;
@@ -94,11 +84,9 @@ package body Iteration is
       end if;
    end Send;
 
-   procedure Receive (C : in out Cai.Block.Client_Session; T : in out Test) is
-      Current_Block : Long_Integer;
+   procedure Receive (C : in out Cai.Block.Client_Session; T : in out Test; Log : in out Cai.Log.Client_Session) is
    begin
       if Client.Initialized (C) then
-         Current_Block := T.Received + 1 + Long_Integer (T.Offset);
          while T.Received < T.Data'Last loop
             declare
                R : Client.Request := Client.Next (C);
@@ -111,12 +99,6 @@ package body Iteration is
                   T.Received := T.Received + 1;
                   Client.Release (C, R);
                elsif R.Kind = Cai.Block.None then
-                  Cai.Log.Client.Info (Log, "Received: " & (case Operation is
-                                                            when Cai.Block.Read => "read ",
-                                                            when Cai.Block.Write => "write ",
-                                                            when others => "invalid ")
-                                            & Cai.Log.Image (Current_Block)
-                                            & " .. " & Cai.Log.Image (T.Received + Long_Integer (T.Offset)));
                   exit;
                else
                   Cai.Log.Client.Warning (Log, "Received unexpected request");
@@ -148,8 +130,5 @@ package body Iteration is
          Xml (Xml_Log, B (I), Cai.Block.Id (I) + Offset);
       end loop;
    end Xml;
-
-begin
-   Cai.Log.Client.Initialize (Log, "Latency");
 
 end Iteration;

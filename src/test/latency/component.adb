@@ -33,13 +33,26 @@ is
       Event;
    end Construct;
 
+   Printed : Boolean := False;
+
    procedure Event is
    begin
       if not Write_Run.Finished (Write_Data) then
-         Write_Run.Run (Client, Write_Data);
+         if not Printed then
+            Cai.Log.Client.Info (Log, "Run: write");
+            Printed := True;
+         end if;
+         Write_Run.Run (Client, Write_Data, Log);
+         if Write_Run.Finished (Write_Data) then
+            Printed := False;
+         end if;
       end if;
       if Write_Run.Finished (Write_Data) and not Read_Run.Finished (Read_Data) then
-         Read_Run.Run (Client, Read_Data);
+         if not Printed then
+            Cai.Log.Client.Info (Log, "Run: read");
+            Printed := True;
+         end if;
+         Read_Run.Run (Client, Read_Data, Log);
       end if;
       if Write_Run.Finished (Write_Data) and Read_Run.Finished (Read_Data) then
          Cai.Log.Client.Info (Log, "Tests finished");

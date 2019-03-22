@@ -28,16 +28,23 @@ package body Run is
       return -1;
    end First;
 
-   procedure Run (C : in out Cai.Block.Client_Session; R : in out Run_Type)
+   Printed : Boolean := False;
+
+   procedure Run (C : in out Cai.Block.Client_Session; R : in out Run_Type; Log : in out Cai.Log.Client_Session)
    is
       F : constant Integer := First (R);
    begin
       if F in R'Range then
-         Iter.Receive (C, R (F));
-         Iter.Send (C, R (F));
+         if not Printed then
+            Cai.Log.Client.Info (Log, "Running iteration " & Cai.Log.Image (F) & " ...");
+            Printed := True;
+         end if;
+         Iter.Receive (C, R (F), Log);
+         Iter.Send (C, R (F), Log);
          if R (F).Finished and F + 1 in R'Range then
-            Iter.Receive (C, R (F + 1));
-            Iter.Send (C, R (F + 1));
+            Printed := False;
+            Iter.Receive (C, R (F + 1), Log);
+            Iter.Send (C, R (F + 1), Log);
          end if;
       end if;
    end Run;
