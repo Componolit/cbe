@@ -15,6 +15,7 @@ package Iteration is
    type Request is record
       Start : Ada.Real_Time.Time;
       Finish : Ada.Real_Time.Time;
+      Success : Boolean;
    end record;
 
    type Burst is array (Long_Integer range <>) of Request;

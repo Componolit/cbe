@@ -4,6 +4,7 @@ with Cai.Block;
 with Cai.Log.Client;
 
 use all type Cai.Block.Request_Kind;
+use all type Cai.Block.Request_Status;
 
 package body Iteration is
 
@@ -24,6 +25,7 @@ package body Iteration is
    is
    begin
       Data (Long_Integer (Item.Start - Offset)).Finish := Ada.Real_Time.Clock;
+      Data (Long_Integer (Item.Start - Offset)).Success := Item.Status = Cai.Block.Ok;
    end Finish;
 
    procedure Initialize (T : out Test; Offset : Cai.Block.Count; Sync : Boolean)
@@ -36,7 +38,7 @@ package body Iteration is
       T.Sync      := Sync;
       T.Buffer    := (others => 0);
       for I in T.Data'Range loop
-         T.Data (I) := (others => Ada.Real_Time.Time_First);
+         T.Data (I) := (Success => False, others => Ada.Real_Time.Time_First);
       end loop;
    end Initialize;
 
@@ -134,6 +136,7 @@ package body Iteration is
       Cai.Log.Client.Info (Xml_Log, "<request id=""" & Cai.Log.Image (Long_Integer (Block))
                                     & """ sent=""" & Cai.Log.Image (Time_Conversion (R.Start))
                                     & """ received=""" & Cai.Log.Image (Time_Conversion (R.Finish))
+                                    & """ status=""" & (if R.Success then "OK" else "ERROR")
                                     & """/>");
    end Xml;
 
