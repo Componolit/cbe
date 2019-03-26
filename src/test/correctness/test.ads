@@ -2,6 +2,7 @@
 with Cai.Log;
 with Cai.Block;
 with Cai.Block.Client;
+with LSC.Internal.SHA256;
 with Ringbuffer;
 
 generic
@@ -22,6 +23,9 @@ package Test is
       Read : Cai.Block.Count;
       Count : Cai.Block.Count;
       Bounds_Checked : Boolean;
+      Compared : Boolean;
+      Write_Context : LSC.Internal.SHA256.Context_Type;
+      Read_Context : LSC.Internal.SHA256.Context_Type;
       Data : Ring.Ringbuffer;
    end record;
 
@@ -49,5 +53,9 @@ package Test is
                    L : in out Cai.Log.Client_Session);
 
    function Read_Finished (T : Test_State) return Boolean;
+
+   procedure Compare (T : in out Test_State; Equal : out Boolean);
+
+   function Compare_Finished (T : Test_State) return Boolean;
 
 end Test;

@@ -1,11 +1,16 @@
 
+with Ada.Unchecked_Conversion;
 with Cai.Log.Client;
 with Cai.Block;
+with LSC.Internal.Types;
+with LSC.Internal.SHA256;
 
 use all type Cai.Block.Count;
 use all type Cai.Block.Size;
 use all type Cai.Block.Request_Kind;
 use all type Cai.Block.Request_Status;
+use all type LSC.Internal.Types.Word32_Array_Type;
+use all type LSC.Internal.SHA256.Message_Index;
 
 package body Test is
 
@@ -20,6 +25,8 @@ package body Test is
       T.Read := 0;
       T.Count := Client.Block_Count (C);
       T.Bounds_Checked := False;
+      T.Write_Context := LSC.Internal.SHA256.SHA256_Context_Init;
+      T.Read_Context := LSC.Internal.SHA256.SHA256_Context_Init;
       if Client.Block_Size (C) > 4096 then
          Cai.Log.Client.Warning (L, "Block size "
                                     & Cai.Log.Image (Long_Integer (Client.Block_Size (C)))
@@ -72,6 +79,20 @@ package body Test is
       return T.Bounds_Checked;
    end Bounds_Check_Finished;
 
+   procedure Hash_Block (Context : in out LSC.Internal.SHA256.Context_Type; Buffer : Cai.Block.Buffer) with
+      Pre => Buffer'Length mod (LSC.Internal.SHA256.Block_Size / 8) = 0
+   is
+      subtype Block_Message is LSC.Internal.SHA256.Message_Type
+         (1 .. Buffer'Length / (LSC.Internal.SHA256.Block_Size / 8));
+      subtype Sub_Block is Cai.Block.Buffer (1 .. Buffer'Length);
+      function Convert_Block is new Ada.Unchecked_Conversion (Sub_Block, Block_Message);
+      Message : constant Block_Message := Convert_Block (Buffer);
+   begin
+      for Block of Message loop
+         LSC.Internal.SHA256.Context_Update (Context, Block);
+      end loop;
+   end Hash_Block;
+
    procedure Write_Recv (C : in out Cai.Block.Client_Session;
                          T : in out Test_State;
                          Success : in out Boolean;
@@ -117,6 +138,7 @@ package body Test is
             PR_Block (Buf);
             Client.Enqueue_Write (C, Request,
                                   Buf (1 .. Request.Length * Client.Block_Size (C)));
+            Hash_Block (T.Write_Context, Buf (1 .. Request.Length * Client.Block_Size (C)));
             T.Sent := T.Sent + 1;
             T.Last := Request.Start;
          end loop;
@@ -223,6 +245,7 @@ package body Test is
             Id : Cai.Block.Id;
          begin
             Ring.Get_Block (T.Data, Id, Buf);
+            Hash_Block (T.Read_Context, Buf (1 .. Cai.Block.Count (1) * Client.Block_Size (C)));
          end;
       end loop;
       if Long_Integer (T.Read) / Long_Integer (T.Count / 50) + 50 /= Progress then
@@ -236,5 +259,22 @@ package body Test is
    begin
       return T.Read = T.Count;
    end Read_Finished;
+
+   procedure Compare (T : in out Test_State; Equal : out Boolean)
+   is
+      Block : constant LSC.Internal.SHA256.Block_Type := (others => 0);
+   begin
+      LSC.Internal.SHA256.Context_Finalize (T.Write_Context, Block, 0);
+      LSC.Internal.SHA256.Context_Finalize (T.Read_Context, Block, 0);
+      Equal := LSC.Internal.SHA256.SHA256_Get_Hash (T.Write_Context) =
+               LSC.Internal.SHA256.SHA256_Get_Hash (T.Read_Context);
+      T.Compared := True;
+   end Compare;
+
+   function Compare_Finished (T : Test_State) return Boolean
+   is
+   begin
+      return T.Compared;
+   end Compare_Finished;
 
 end Test;

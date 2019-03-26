@@ -85,6 +85,7 @@ is
 
       if
          Success
+         and Disk_Test.Bounds_Check_Finished (Data)
          and Disk_Test.Write_Finished (Data)
          and not Disk_Test.Read_Finished (Data)
       then
@@ -92,8 +93,20 @@ is
       end if;
 
       if
-         (Disk_Test.Write_Finished (Data)
-          and Disk_Test.Read_Finished (Data))
+         Success
+         and Disk_Test.Bounds_Check_Finished (Data)
+         and Disk_Test.Write_Finished (Data)
+         and Disk_Test.Read_Finished (Data)
+         and not Disk_Test.Compare_Finished (Data)
+      then
+         Disk_Test.Compare (Data, Success);
+      end if;
+
+      if
+         (Disk_Test.Bounds_Check_Finished (Data)
+          and Disk_Test.Write_Finished (Data)
+          and Disk_Test.Read_Finished (Data)
+          and Disk_Test.Compare_Finished (Data))
          or not Success
       then
          Cai.Log.Client.Info (Log, "Correctness test "

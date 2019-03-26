@@ -166,6 +166,7 @@ set boot_modules {
     ld.lib.so
     spark.lib.so
     ada_interface.lib.so
+    libsparkcrypto.lib.so
     timer
     vga_log_drv
     usb_drv
