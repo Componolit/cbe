@@ -1,10 +1,13 @@
 
 with Ada.Unchecked_Conversion;
+with Ada.Real_Time;
 with Cai.Log.Client;
 with Cai.Block;
 with LSC.Internal.Types;
 with LSC.Internal.SHA256;
 
+use all type Ada.Real_Time.Time;
+use all type Ada.Real_Time.Time_Span;
 use all type Cai.Block.Count;
 use all type Cai.Block.Size;
 use all type Cai.Block.Request_Kind;
@@ -36,6 +39,18 @@ package body Test is
    end Initialize;
 
    Progress : Long_Integer := -1;
+   Start : Ada.Real_Time.Time;
+
+   function Remain (S : Ada.Real_Time.Time;
+                    C : Ada.Real_Time.Time;
+                    P : Long_Integer) return Duration
+   is
+   begin
+      if P < 1 or P > 99 then
+         return Duration (0);
+      end if;
+      return Ada.Real_Time.To_Duration (((C - S) / Integer (P)) * Integer (100 - P));
+   end Remain;
 
    procedure Bounds_Check (C : in out Cai.Block.Client_Session;
                            T : in out Test_State;
@@ -71,6 +86,7 @@ package body Test is
       end loop;
       Client.Enqueue_Read (C, Request);
       Client.Submit(C);
+      Start := Ada.Real_Time.Clock;
    end Bounds_Check;
 
    function Bounds_Check_Finished (T : Test_State) return Boolean
@@ -151,6 +167,7 @@ package body Test is
                     Success : out Boolean;
                     L : in out Cai.Log.Client_Session)
    is
+      Current : Ada.Real_Time.Time;
    begin
       Success := True;
       Write_Recv (C, T, Success, L);
@@ -158,6 +175,11 @@ package body Test is
       if Long_Integer (T.Written) / Long_Integer (T.Count / 50) /= Progress then
          Progress := Long_Integer (T.Written) / Long_Integer (T.Count / 50);
          Cai.Log.Client.Info (L, "Writing... (" & Cai.Log.Image (Progress) & "%)");
+         Current := Ada.Real_Time.Clock;
+         Cai.Log.Client.Info (L, "Elapsed: "
+                                 & Cai.Log.Image (Ada.Real_Time.To_Duration (Current - Start))
+                                 & " Remaining: "
+                                 & Cai.Log.Image (Remain (Start, Current, Progress)));
       end if;
       if Write_Finished (T) then
          T.Sent := 0;
@@ -235,6 +257,7 @@ package body Test is
                    Success : out Boolean;
                    L : in out Cai.Log.Client_Session)
    is
+      Current : Ada.Real_Time.Time;
    begin
       Success := True;
       Read_Recv (C, T, Success, L);
@@ -251,6 +274,11 @@ package body Test is
       if Long_Integer (T.Read) / Long_Integer (T.Count / 50) + 50 /= Progress then
          Progress := Long_Integer (T.Read) / Long_Integer (T.Count / 50) + 50;
          Cai.Log.Client.Info (L, "Reading... (" & Cai.Log.Image (Progress) & "%)");
+         Current := Ada.Real_Time.Clock;
+         Cai.Log.Client.Info (L, "Elapsed: "
+                                 & Cai.Log.Image (Ada.Real_Time.To_Duration (Current - Start))
+                                 & " Remaining: "
+                                 & Cai.Log.Image (Remain (Start, Current, Progress)));
       end if;
    end Read;
 
