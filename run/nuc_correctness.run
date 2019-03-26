@@ -8,6 +8,7 @@ set build_components {
     server/part_block
     server/rump_fs
     server/fs_log
+    server/log_tee
     test/correctness
 }
 
@@ -50,9 +51,33 @@ append config {
     <start name="cbe-test-correctness">
         <resource name="RAM" quantum="256M"/>
         <route>
-            <service name="LOG" label="Correctness"><child name="vga_log_drv"/></service>
-            <service name="LOG" label="XML"><child name="fs_log"/></service>
+            <service name="LOG" label="Correctness"><child name="log_tee_vga"/></service>
             <service name="Block"><child name="ahci_drv"/></service>
+            <any-service><parent/><any-child/></any-service>
+        </route>
+    </start>
+
+    <start name="log_tee_vga">
+        <binary name="log_tee"/>
+        <resource name="RAM" quantum="4M"/>
+        <provides>
+            <service name="LOG"/>
+        </provides>
+        <route>
+            <service name="LOG" label="cbe-test-correctness -> Correctness"><child name="vga_log_drv"/></service>
+            <service name="LOG"><child name="log_tee_fs" label="cbe-correctness"/></service>
+            <any-service><parent/><any-child/></any-service>
+        </route>
+    </start>
+
+    <start name="log_tee_fs">
+        <binary name="log_tee"/>
+        <resource name="RAM" quantum="4M"/>
+        <provides>
+            <service name="LOG"/>
+        </provides>
+        <route>
+            <service name="LOG" label="cbe-correctness"><child name="fs_log"/></service>
             <any-service><parent/><any-child/></any-service>
         </route>
     </start>
@@ -105,7 +130,7 @@ append config {
             <service name="LOG"/>
         </provides>
         <config>
-            <policy label="cbe-test-latency -> XML"/>
+            <policy label="log_tee_fs -> cbe-correctness"/>
         </config>
     </start>
 
@@ -149,6 +174,7 @@ set boot_modules {
     rump.lib.so
     rump_fs.lib.so
     fs_log
+    log_tee
     ahci_drv
     cbe-test-correctness
 }
