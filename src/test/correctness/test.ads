@@ -21,12 +21,20 @@ package Test is
       Written : Cai.Block.Count;
       Read : Cai.Block.Count;
       Count : Cai.Block.Count;
+      Bounds_Checked : Boolean;
       Data : Ring.Ringbuffer;
    end record;
 
    procedure Initialize (C : in out Cai.Block.Client_Session;
                          T : out Test_State;
                          L : in out Cai.Log.Client_Session);
+
+   procedure Bounds_Check (C : in out Cai.Block.Client_Session;
+                           T : in out Test_State;
+                           Success : out Boolean;
+                           L : in out Cai.Log.Client_Session);
+
+   function Bounds_Check_Finished (T : Test_State) return Boolean;
 
    procedure Write (C : in out Cai.Block.Client_Session;
                     T : in out Test_State;

@@ -39,13 +39,26 @@ is
 
    procedure Construct
    is
+      Count : Long_Integer;
+      Size : Long_Integer;
    begin
       Cai.Log.Client.Initialize (Log, "Correctness");
       Cai.Log.Client.Info (Log, "Correctness");
       Block_Client.Initialize (Block, "");
+      Count := Long_Integer (Block_Client.Block_Count (Block));
+      Size := Long_Integer (Block_Client.Block_Size (Block));
       Cai.Log.Client.Info (Log, "Running correctness test over "
-                                & Cai.Log.Image (Long_Integer (Block_Client.Block_Count (Block)))
-                                & " blocks...");
+                                & Cai.Log.Image (Count)
+                                & " blocks of "
+                                & Cai.Log.Image (Size)
+                                & " byte size ("
+                                & (if
+                                      Count * Size < 1024 ** 3
+                                   then
+                                      Cai.Log.Image (Count * Size / 1024 ** 2) & " MiB"
+                                   else
+                                      Cai.Log.Image (Count * Size / 1024 ** 3) & " GiB")
+                                & ")...");
       Disk_Test.Initialize (Block, Data, Log);
       Event;
    end Construct;
@@ -55,14 +68,29 @@ is
    procedure Event
    is
    begin
-      if Success then
-         if not Disk_Test.Write_Finished (Data) then
-            Disk_Test.Write (Block, Data, Success, Log);
-         end if;
-         if Disk_Test.Write_Finished (Data) and not Disk_Test.Read_Finished (Data) then
-            Disk_Test.Read (Block, Data, Success, Log);
-         end if;
+      if
+         Success
+         and not Disk_Test.Bounds_Check_Finished (Data)
+      then
+         Disk_Test.Bounds_Check (Block, Data, Success, Log);
       end if;
+
+      if
+         Success
+         and Disk_Test.Bounds_Check_Finished (Data)
+         and not Disk_Test.Write_Finished (Data)
+      then
+         Disk_Test.Write (Block, Data, Success, Log);
+      end if;
+
+      if
+         Success
+         and Disk_Test.Write_Finished (Data)
+         and not Disk_Test.Read_Finished (Data)
+      then
+         Disk_Test.Read (Block, Data, Success, Log);
+      end if;
+
       if
          (Disk_Test.Write_Finished (Data)
           and Disk_Test.Read_Finished (Data))

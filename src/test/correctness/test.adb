@@ -19,6 +19,7 @@ package body Test is
       T.Written := 0;
       T.Read := 0;
       T.Count := Client.Block_Count (C);
+      T.Bounds_Checked := False;
       if Client.Block_Size (C) > 4096 then
          Cai.Log.Client.Warning (L, "Block size "
                                     & Cai.Log.Image (Long_Integer (Client.Block_Size (C)))
@@ -28,6 +29,48 @@ package body Test is
    end Initialize;
 
    Progress : Long_Integer := -1;
+
+   procedure Bounds_Check (C : in out Cai.Block.Client_Session;
+                           T : in out Test_State;
+                           Success : out Boolean;
+                           L : in out Cai.Log.Client_Session)
+   is
+      Request : constant Client.Request := (Kind => Cai.Block.Read,
+                                   Priv => Cai.Block.Null_Data,
+                                   Start => Cai.Block.Id (T.Count),
+                                   Length => 1,
+                                   Status => Cai.Block.Raw);
+      R : Client.Request := Client.Next (C);
+   begin
+      Success := True;
+      if R.Kind = Cai.Block.Read then
+         Success := R.Status = Cai.Block.Error;
+         if not Success then
+            Cai.Log.Client.Error (L, "Bounds check failed, block "
+                                     & Cai.Log.Image (Long_Integer (R.Start))
+                                     & " should not be: "
+                                     & (case R.Status is
+                                          when Cai.Block.Raw => "Raw",
+                                          when Cai.Block.Ok => "Ok",
+                                          when Cai.Block.Error => "Error",
+                                          when Cai.Block.Acknowledged => "Acknowledged"));
+         end if;
+         Client.Release (C, R);
+         T.Bounds_Checked := True;
+         return;
+      end if;
+      while not Client.Ready (C, Request) loop
+         null;
+      end loop;
+      Client.Enqueue_Read (C, Request);
+      Client.Submit(C);
+   end Bounds_Check;
+
+   function Bounds_Check_Finished (T : Test_State) return Boolean
+   is
+   begin
+      return T.Bounds_Checked;
+   end Bounds_Check_Finished;
 
    procedure Write_Recv (C : in out Cai.Block.Client_Session;
                          T : in out Test_State;
