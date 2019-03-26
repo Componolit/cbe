@@ -1,22 +1,49 @@
 package body Permutation with
-  SPARK_Mode
+SPARK_Mode
 is
 
    function Map (O : Output_Type) return U64 is
      (U64 (Output_Type'Pos (O) - Output_Type'Pos (Output_Type'First)));
 
    function In_Range (N : U64) return Boolean is
-     (N >= Map (Output_Type'First) and then N <= Map (Output_Type'Last));
+     (N >= Map (Output_Type'First) and then N <= Map (Upper_Bound));
 
    function Map (N : U64) return Output_Type is
      (Output_Type'Val (U64'Pos (N) + Output_Type'Pos (Output_Type'First)))
      with
        Pre => In_Range (N);
 
+   function Next_Size (O : Output_Type) return Natural
+   is
+      type N_Array is array (Integer range <>) of Natural;
+      Powers : constant N_Array := (62, 60, 58, 56, 54,
+                                    52, 50, 48, 46, 44, 42,
+                                    40, 38, 36, 34, 32, 30,
+                                    28, 26, 24, 22, 20, 18,
+                                    16, 14, 12);
+      Previous : Natural := 64;
+   begin
+      pragma Assert (for all P of Powers => P >= 12);
+      pragma Assert (for all P of Powers => P <= 62);
+      -- pragma Assert (for all P of Powers => 2 ** P in U64'Range);
+      for P of Powers loop
+         pragma Loop_Invariant (P >= 12);
+         pragma Loop_Invariant (Previous >= 12);
+         pragma Loop_Invariant (P <= 62);
+         -- pragma Loop_Invariant (2 ** P in U64'Range);
+         exit when Map (O) > U64 (2 ** P);
+         Previous := P;
+      end loop;
+      -- pragma Assert (Previous >= 12);
+      return Previous;
+   end Next_Size;
+
    function Has_Element return Boolean is
      (Next_Found and then In_Range (Next_Number));
 
-   procedure Find_Next is
+   procedure Find_Next with
+     Pre => Initialized
+   is
       N : U64;
    begin
       if State < FIRST or State > LAST or Last_Reached then
@@ -45,9 +72,15 @@ is
       end if;
    end Find_Next;
 
-   procedure Initialize is
+   procedure Initialize (Upper : Output_Type) is
    begin
       State := U64'First;
+      Upper_Bound := Upper;
+      SIZE := Next_Size (Upper);
+      LAST := 2 ** SIZE - 1;
+      pragma Assert (2 ** (SIZE / 2) > 0);
+      M := 2**(SIZE / 2);
+      pragma Assert (M > 0);
       Last_Reached := False;
       Find_Next;
    end Initialize;
@@ -65,7 +98,7 @@ is
    function Convert (Number : U64) return Data_Type is
      (U32 (Number / U64 (M)), U32 (Number and U64 (M - 1)))
      with
-       Pre => Number <= LAST;
+       Pre => Number <= LAST and Initialized;
 
    function Permute (Number : U64) return U64 is
       Data : Data_Type := Convert (Number);

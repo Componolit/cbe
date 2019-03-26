@@ -9,7 +9,7 @@ is
       package Perm is new Permutation (Number); use Perm;
       N : Number;
    begin
-      Initialize;
+      Initialize (Number'Last);
       while Has_Element loop
          Next (N);
          pragma Inspection_Point (N);

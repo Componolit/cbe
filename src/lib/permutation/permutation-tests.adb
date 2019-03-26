@@ -12,7 +12,7 @@ package body Permutation.Tests is
       pragma Unreferenced (T);
       N : U64;
    begin
-      Initialize;
+      Initialize (Output_Type'Last);
       for I in FIRST .. LAST loop
          N := U64 (I);
          N := Permute (N);
@@ -28,10 +28,11 @@ package body Permutation.Tests is
       N : Output_Type;
       type Number_Array_Type is array (Output_Type) of Output_Type;
       N_Array : Number_Array_Type := (others => Output_Type'Val (0));
-      Expected_Last : Natural := Output_Type'Pos (Output_Type'Last);
+      Upper : Output_Type := Output_Type'Val (13);
+      Expected_Last : Natural := Output_Type'Pos (Upper);
    begin
-      Initialize;
-      for I in Output_Type'First .. Output_Type'Last loop
+      Initialize (Upper);
+      for I in Output_Type'First .. Upper loop
          if Has_Element then
             Next (N);
             for J in Output_Type'Pos (Output_Type'First) .. Output_Type'Pos (I) - 1 loop
@@ -44,7 +45,7 @@ package body Permutation.Tests is
       end loop;
       Assert (not Has_Element, "More elements");
 
-      Initialize;
+      Initialize (Output_Type'Last);
       Assert (Has_Element, "No elements after initialize");
    end Test_Completeness;
 
@@ -52,7 +53,7 @@ package body Permutation.Tests is
       pragma Unreferenced (T);
       N : Output_Type;
    begin
-      Initialize;
+      Initialize (Output_Type'Last);
       if Output_Type'Size = 12 then
          Next (N);
          Assert (N'Img, Output_Type'Image (Output_Type'Val (-99)), "Unexpected value");

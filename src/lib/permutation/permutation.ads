@@ -7,14 +7,19 @@ generic
    Key2 : Natural := 5;
    Key3 : Natural := 7;
 package Permutation with
-  SPARK_Mode
+SPARK_Mode
 is
    pragma Compile_Time_Error (Output_Type'Size <= 11, "Output_Type'Size must be at least 12");
 
-   procedure Initialize;
+   function Initialized return Boolean with
+     Ghost;
+
+   procedure Initialize (Upper : Output_Type) with
+     Pre => Upper > Output_Type'First,
+     Post => Initialized;
    function Has_Element return Boolean;
    procedure Next (Number : out Output_Type) with
-     Pre => Has_Element;
+     Pre => Has_Element and Initialized;
 
 private
 
@@ -27,12 +32,20 @@ private
          R : U32;
       end record;
 
-   SIZE : constant Natural := Output_Type'Size + Output_Type'Size mod 2;
+   function Next_Size (O : Output_Type) return Natural with
+     Post => Next_Size'Result >= 12;
+
+   Upper_Bound : Output_Type := Output_Type'First;
+
+   SIZE : Natural := 0;
 
    FIRST : constant U64 := 0;
-   LAST  : constant U64 := 2**SIZE - 1;
+   LAST  : U64 := 0;
 
-   M : constant U32 := 2**(SIZE / 2);
+   M : U32 := 0;
+
+   function Initialized return Boolean is
+      (M > 0);
 
    RNDS : constant U32 := U32 (Rounds);
    KS   : constant U32 := U32 (Key_Schedule);
@@ -47,8 +60,8 @@ private
    Last_Reached : Boolean := False;
 
    function Permute (Number : U64) return U64 with
-     Pre => Number <= LAST;
+     Pre => Number <= LAST and Initialized;
    function Inverse (Number : U64) return U64 with
-     Pre => Number <= LAST;
+     Pre => Number <= LAST and Initialized;
 
 end Permutation;
