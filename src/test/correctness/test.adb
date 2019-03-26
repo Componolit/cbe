@@ -135,7 +135,7 @@ package body Test is
          loop
             Request.Start := Next (T.Last);
             exit when not Client.Ready (C, Request) or T.Sent >= T.Count;
-            PR_Block (Buf);
+            PR_Block (Buf, Request.Start);
             Client.Enqueue_Write (C, Request,
                                   Buf (1 .. Request.Length * Client.Block_Size (C)));
             Hash_Block (T.Write_Context, Buf (1 .. Request.Length * Client.Block_Size (C)));

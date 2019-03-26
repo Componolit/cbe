@@ -8,7 +8,7 @@ with Ringbuffer;
 generic
    with package Client is new Cai.Block.Client (<>);
    with function Next (Current : Cai.Block.Id) return Cai.Block.Id;
-   with procedure PR_Block (B : in out Cai.Block.Buffer);
+   with procedure PR_Block (B : in out Cai.Block.Buffer; Id : Cai.Block.Id);
 package Test is
 
    type Buffer_Index is mod 256;

@@ -1,8 +1,11 @@
 
+with Ada.Unchecked_Conversion;
 with Cai.Log;
 with Cai.Log.Client;
 with Cai.Block;
 with Cai.Block.Client;
+with LSC.AES_Generic;
+with LSC.AES_Generic.CBC;
 with Test;
 
 use all type Cai.Block.Id;
@@ -27,10 +30,26 @@ is
       end if;
    end Next;
 
-   procedure PR_Block (B : in out Cai.Block.Buffer)
+   procedure PR_Block (B : in out Cai.Block.Buffer; I : Cai.Block.Id)
    is
+      function CBC_Key is new LSC.AES_Generic.Enc_Key (Cai.Block.Unsigned_Long,
+                                                       Cai.Block.Byte,
+                                                       Cai.Block.Buffer);
+      procedure CBC is new LSC.AES_Generic.CBC.Encrypt (Cai.Block.Unsigned_Long,
+                                                        Cai.Block.Byte,
+                                                        Cai.Block.Buffer,
+                                                        Cai.Block.Unsigned_Long,
+                                                        Cai.Block.Byte,
+                                                        Cai.Block.Buffer);
+      subtype Id is Cai.Block.Buffer (1 .. 8);
+      function Convert_Id is new Ada.Unchecked_Conversion (Cai.Block.Id, Id);
+      Null_Block : constant Cai.Block.Buffer (1 .. B'Length) := (others => 0);
+      IV : Cai.Block.Buffer (1 .. 16) := (others => 0);
+      Key : constant Cai.Block.Buffer (1 .. 128) := (others => 16#42#);
+      --  This is no cryptographically secure encryption and only used to generate pseudo random blocks
    begin
-      B := (others => 0);
+      IV (1 .. 8) := Convert_Id (I);
+      CBC (Null_Block, IV, CBC_Key (Key, LSC.AES_Generic.L128), B);
    end PR_Block;
 
    package Disk_Test is new Test (Block_Client, Next, PR_Block);
