@@ -6,13 +6,17 @@ with Cai.Block;
 with Cai.Block.Client;
 with LSC.AES_Generic;
 with LSC.AES_Generic.CBC;
+with Permutation;
 with Test;
 
 use all type Cai.Block.Id;
+use all type Cai.Block.Count;
 
 package body Component with
    SPARK_Mode
 is
+
+   package Block_Permutation is new Permutation (Cai.Block.Id);
 
    Log : Cai.Log.Client_Session := Cai.Log.Client.Create;
 
@@ -56,6 +60,16 @@ is
 
    Data : Disk_Test.Test_State;
 
+   procedure Check_Permutation
+   is
+      Num : Cai.Block.Id;
+   begin
+      while Block_Permutation.Has_Element loop
+         Block_Permutation.Next (Num);
+         Cai.Log.Client.Info (Log, "Perm " & Cai.Log.Image (Long_Integer (Num)));
+      end loop;
+   end Check_Permutation;
+
    procedure Construct
    is
       Count : Long_Integer;
@@ -64,6 +78,9 @@ is
       Cai.Log.Client.Initialize (Log, "Correctness");
       Cai.Log.Client.Info (Log, "Correctness");
       Block_Client.Initialize (Block, "");
+      Block_Permutation.Initialize (23);
+      Check_Permutation;
+      Block_Permutation.Initialize (Cai.Block.Id (Block_Client.Block_Count (Block) - 1));
       Count := Long_Integer (Block_Client.Block_Count (Block));
       Size := Long_Integer (Block_Client.Block_Size (Block));
       Cai.Log.Client.Info (Log, "Running correctness test over "
