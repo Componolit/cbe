@@ -65,10 +65,10 @@ package body Run is
                                                          when Cai.Block.None | Cai.Block.Sync => "INVALID",
                                                          when Cai.Block.Read => "READ",
                                                          when Cai.Block.Write => "WRITE")
-                                    & """ transfer_size=""1""/>");
+                                    & """ transfer_size=""1"">");
       for I in R'Range loop
          Cai.Log.Client.Info (Log, Cai.Log.Image (I) & " .. ", False);
-         Cai.Log.Client.Info (Xml_Log, "<iteration num=""" & Cai.Log.Image (I) & """/>");
+         Cai.Log.Client.Info (Xml_Log, "<iteration num=""" & Cai.Log.Image (I) & """>");
          Iter.Xml (Xml_Log, R (I).Data, R (I).Offset);
          Cai.Log.Client.Info (Xml_Log, "</iteration>");
       end loop;

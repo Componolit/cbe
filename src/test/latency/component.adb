@@ -143,7 +143,7 @@ is
          Cai.Log.Client.Info (Log, "Tests finished, writing data...");
          Cai.Log.Client.Info (Xml, "<test name=""Latency"" platform=""Genode"" hardware=""Qemu"" block_size="""
                                    & Cai.Log.Image (Long_Integer (Block_Client.Block_Size (Client)))
-                                   & """/>");
+                                   & """>");
          Cai.Log.Client.Info (Log, "Small_1...");
          Small_1.Xml (Xml, Small_1_Data, Log);
          Cai.Log.Client.Info (Log, "Small_2...");
