@@ -11,6 +11,7 @@ set build_components {
     server/fs_log
     server/log_tee
     test/correctness
+    app/log_core
 }
 
 source ${genode_dir}/repos/base/run/platform_drv.inc
@@ -151,6 +152,18 @@ append config {
         </route>
     </start>
 
+    <start name="log_core">
+        <resource name="RAM" quantum="16M"/>
+        <config period_ms="2000"/>
+        <route>
+            <service name="ROM" unscoped_label="log_core"><parent/></service>
+            <service name="ROM" unscoped_label="ls.lib.so"><parent/></service>
+            <service name="ROM" label="log"><parent label="core_log"/></service>
+            <service name="LOG" label="log"><child name="fs_log"/></service>
+            <any-service><parent/><any-child/></any-service>
+        </route>
+    </start>
+
     <start name="fs_log">
         <resource name="RAM" quantum="4M"/>
         <provides>
@@ -158,6 +171,7 @@ append config {
         </provides>
         <config>
             <policy label="log_tee_fs -> cbe-correctness"/>
+            <policy label="log_core -> log"/>
         </config>
     </start>
 
@@ -206,6 +220,7 @@ set boot_modules {
     ahci_drv
     ram_block
     cbe-test-correctness
+    log_core
 }
 
 append_platform_drv_boot_modules
