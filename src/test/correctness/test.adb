@@ -149,8 +149,8 @@ package body Test is
    begin
       if T.Sent < T.Count then
          loop
-            Request.Start := Next (T.Last);
             exit when not Client.Ready (C, Request) or T.Sent >= T.Count;
+            Request.Start := Next (T.Last);
             PR_Block (Buf (1 .. Request.Length * Client.Block_Size (C)), Request.Start);
             Client.Enqueue_Write (C, Request,
                                   Buf (1 .. Request.Length * Client.Block_Size (C)));
@@ -172,7 +172,7 @@ package body Test is
       Success := True;
       Write_Recv (C, T, Success, L);
       Write_Send (C, T, Success, L);
-      if Long_Integer (T.Written) / Long_Integer (T.Count / 50) /= Progress then
+      if T.Count >= 50 and then Long_Integer (T.Written) / Long_Integer (T.Count / 50) /= Progress then
          Progress := Long_Integer (T.Written) / Long_Integer (T.Count / 50);
          Cai.Log.Client.Info (L, "Writing... (" & Cai.Log.Image (Progress) & "%)");
          Current := Ada.Real_Time.Clock;
@@ -236,8 +236,8 @@ package body Test is
    begin
       if T.Sent < T.Count then
          loop
-            Request.Start := Next (T.Last);
             exit when not Client.Ready (C, Request) or not Ring.Free (T.Data) or T.Sent >= T.Count;
+            Request.Start := Next (T.Last);
             Client.Enqueue_Read (C, Request);
             if not Ring.Has_Block (T.Data, Request.Start) then
                Ring.Add (T.Data, Request.Start);
@@ -271,7 +271,7 @@ package body Test is
             Hash_Block (T.Read_Context, Buf (1 .. Cai.Block.Count (1) * Client.Block_Size (C)));
          end;
       end loop;
-      if Long_Integer (T.Read) / Long_Integer (T.Count / 50) + 50 /= Progress then
+      if T.Count >= 50 and then Long_Integer (T.Read) / Long_Integer (T.Count / 50) + 50 /= Progress then
          Progress := Long_Integer (T.Read) / Long_Integer (T.Count / 50) + 50;
          Cai.Log.Client.Info (L, "Reading... (" & Cai.Log.Image (Progress) & "%)");
          Current := Ada.Real_Time.Clock;

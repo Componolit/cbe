@@ -26,12 +26,14 @@ is
 
    function Next (Current : Cai.Block.Id) return Cai.Block.Id
    is
+      Next_Block : Cai.Block.Id := 0;
    begin
-      if Current = Cai.Block.Id'Last then
-         return 0;
+      if Block_Permutation.Has_Element then
+         Block_Permutation.Next (Next_Block);
       else
-         return Current + Cai.Block.Count (1);
+         Cai.Log.Client.Error (Log, "Block permutation exceeded, returning 0");
       end if;
+      return Next_Block;
    end Next;
 
    procedure PR_Block (B : in out Cai.Block.Buffer; I : Cai.Block.Id)
@@ -60,16 +62,6 @@ is
 
    Data : Disk_Test.Test_State;
 
-   procedure Check_Permutation
-   is
-      Num : Cai.Block.Id;
-   begin
-      while Block_Permutation.Has_Element loop
-         Block_Permutation.Next (Num);
-         Cai.Log.Client.Info (Log, "Perm " & Cai.Log.Image (Long_Integer (Num)));
-      end loop;
-   end Check_Permutation;
-
    procedure Construct
    is
       Count : Long_Integer;
@@ -78,9 +70,6 @@ is
       Cai.Log.Client.Initialize (Log, "Correctness");
       Cai.Log.Client.Info (Log, "Correctness");
       Block_Client.Initialize (Block, "");
-      Block_Permutation.Initialize (23);
-      Check_Permutation;
-      Block_Permutation.Initialize (Cai.Block.Id (Block_Client.Block_Count (Block) - 1));
       Count := Long_Integer (Block_Client.Block_Count (Block));
       Size := Long_Integer (Block_Client.Block_Size (Block));
       Cai.Log.Client.Info (Log, "Running correctness test over "
@@ -100,6 +89,8 @@ is
    end Construct;
 
    Success : Boolean := True;
+   First_Write : Boolean := True;
+   First_Read : Boolean := True;
 
    procedure Event
    is
@@ -116,6 +107,10 @@ is
          and Disk_Test.Bounds_Check_Finished (Data)
          and not Disk_Test.Write_Finished (Data)
       then
+         if First_Write then
+            Block_Permutation.Initialize (Cai.Block.Id (Block_Client.Block_Count (Block) - 1));
+            First_Write := False;
+         end if;
          Disk_Test.Write (Block, Data, Success, Log);
       end if;
 
@@ -125,6 +120,10 @@ is
          and Disk_Test.Write_Finished (Data)
          and not Disk_Test.Read_Finished (Data)
       then
+         if First_Read then
+            Block_Permutation.Initialize (Cai.Block.Id (Block_Client.Block_Count (Block) - 1));
+            First_Read := False;
+         end if;
          Disk_Test.Read (Block, Data, Success, Log);
       end if;
 
