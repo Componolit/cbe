@@ -53,6 +53,41 @@ package body Test is
       return Ada.Real_Time.To_Duration (((C - S) / Integer (P)) * Integer (1000 - P));
    end Remain;
 
+   function Byte_Image (Bytes : Long_Integer) return String is
+      (if
+         Bytes < (1024 ** 3) * 10
+      then
+         Cai.Log.Image (Bytes / 1024 ** 2) & " MiB"
+      else
+         Cai.Log.Image (Bytes / 1024 ** 3) & " GiB");
+
+   procedure Print_Progress (Prefix : String;
+                             Done : Cai.Block.Count;
+                             Todo : Cai.Block.Count;
+                             C : Cai.Block.Client_Session;
+                             L : in out Cai.Log.Client_Session)
+   is
+      Current : Ada.Real_Time.Time;
+      Size : constant Cai.Block.Size := Client.Block_Size (C);
+   begin
+      Current := Ada.Real_Time.Clock;
+      if Ada.Real_Time.To_Duration (Current - Last) > Duration(2) then
+         Last := Current;
+         Progress := Long_Integer (Done) / Long_Integer (Todo / 1000);
+         Cai.Log.Client.Info (L, Prefix & "... ("
+                                 & Cai.Log.Image (Progress / 10)
+                                 & "."
+                                 & Cai.Log.Image (Progress rem 10)
+                                 & "%, " & Byte_Image (Long_Integer (Done * Size))
+                                 & " / " & Byte_Image (Long_Integer (Todo * Size))
+                                 & ")");
+         Cai.Log.Client.Info (L, "Elapsed: "
+                                 & Cai.Log.Image (Ada.Real_Time.To_Duration (Current - Start))
+                                 & " Remaining: "
+                                 & Cai.Log.Image (Remain (Start, Current, Progress)));
+      end if;
+   end Print_Progress;
+
    procedure Bounds_Check (C : in out Cai.Block.Client_Session;
                            T : in out Test_State;
                            Success : out Boolean;
@@ -169,25 +204,11 @@ package body Test is
                     Success : out Boolean;
                     L : in out Cai.Log.Client_Session)
    is
-      Current : Ada.Real_Time.Time;
    begin
       Success := True;
       Write_Recv (C, T, Success, L);
       Write_Send (C, T, Success, L);
-      Current := Ada.Real_Time.Clock;
-      if Ada.Real_Time.To_Duration (Current - Last) > Duration(2) then
-         Last := Current;
-         Progress := Long_Integer (T.Written) / Long_Integer (T.Count / 500);
-         Cai.Log.Client.Info (L, "Writing... ("
-                                 & Cai.Log.Image (Progress / 10)
-                                 & "."
-                                 & Cai.Log.Image (Progress rem 10)
-                                 & "%)");
-         Cai.Log.Client.Info (L, "Elapsed: "
-                                 & Cai.Log.Image (Ada.Real_Time.To_Duration (Current - Start))
-                                 & " Remaining: "
-                                 & Cai.Log.Image (Remain (Start, Current, Progress)));
-      end if;
+      Print_Progress ("Writing", T.Written, T.Count, C, L);
       if Write_Finished (T) then
          T.Sent := 0;
          T.Last := Cai.Block.Id'Last;
@@ -278,20 +299,7 @@ package body Test is
             Hash_Block (T.Read_Context, Buf (1 .. Cai.Block.Count (1) * Client.Block_Size (C)));
          end;
       end loop;
-      Current := Ada.Real_Time.Clock;
-      if Ada.Real_Time.To_Duration (Current - Last) > Duration(2) then
-         Last := Current;
-         Progress := Long_Integer (T.Read) / Long_Integer (T.Count / 500) + 500;
-         Cai.Log.Client.Info (L, "Reading... ("
-                                 & Cai.Log.Image (Progress / 10)
-                                 & "."
-                                 & Cai.Log.Image (Progress rem 10)
-                                 & "%)");
-         Cai.Log.Client.Info (L, "Elapsed: "
-                                 & Cai.Log.Image (Ada.Real_Time.To_Duration (Current - Start))
-                                 & " Remaining: "
-                                 & Cai.Log.Image (Remain (Start, Current, Progress)));
-      end if;
+      Print_Progress ("Reading", T.Read, T.Count, C, L);
    end Read;
 
    function Read_Finished (T : Test_State) return Boolean

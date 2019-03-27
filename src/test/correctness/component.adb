@@ -77,12 +77,7 @@ is
                                 & " blocks of "
                                 & Cai.Log.Image (Size)
                                 & " byte size ("
-                                & (if
-                                      Count * Size < 1024 ** 3
-                                   then
-                                      Cai.Log.Image (Count * Size / 1024 ** 2) & " MiB"
-                                   else
-                                      Cai.Log.Image (Count * Size / 1024 ** 3) & " GiB")
+                                & Disk_Test.Byte_Image (Count * Size)
                                 & ")...");
       Disk_Test.Initialize (Block, Data, Log);
       Event;
