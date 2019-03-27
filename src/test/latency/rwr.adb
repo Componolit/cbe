@@ -60,13 +60,13 @@ package body Rwr is
    is
    begin
       Cai.Log.Client.Info (Log, "r1: ", False);
-      RR1.Xml (Xml_Log, R.R1, Log);
+      RR1.Xml (Xml_Log, R.R1, True, Log);
       Cai.Log.Client.Flush (Log);
       Cai.Log.Client.Info (Log, "w: ", False);
-      WR.Xml (Xml_Log, R.W, Log);
+      WR.Xml (Xml_Log, R.W, False, Log);
       Cai.Log.Client.Flush (Log);
       Cai.Log.Client.Info (Log, "r2: ", False);
-      RR2.Xml (Xml_Log, R.R2, Log);
+      RR2.Xml (Xml_Log, R.R2, False, Log);
       Cai.Log.Client.Flush (Log);
    end Xml;
 

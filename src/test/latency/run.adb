@@ -3,6 +3,7 @@ with Cai.Block;
 with Cai.Log.Client;
 
 use all type Cai.Block.Count;
+use all type Cai.Block.Request_Kind;
 
 package body Run is
 
@@ -56,7 +57,7 @@ package body Run is
       return Fin;
    end Finished;
 
-   procedure Xml (Xml_Log : in out Cai.Log.Client_Session; R : Run_Type; Log : in out Cai.Log.Client_Session)
+   procedure Xml (Xml_Log : in out Cai.Log.Client_Session; R : Run_Type; Cold : Boolean; Log : in out Cai.Log.Client_Session)
    is
    begin
       Cai.Log.Client.Info (Xml_Log, "<run burst_size=""" & Cai.Log.Image (Long_Integer (R (R'First).Data'Length))
@@ -65,6 +66,7 @@ package body Run is
                                                          when Cai.Block.None | Cai.Block.Sync => "INVALID",
                                                          when Cai.Block.Read => "READ",
                                                          when Cai.Block.Write => "WRITE")
+                                    & (if Operation = Cai.Block.Read then """ cold=""" & Cai.Log.Image (Cold) else "")
                                     & """ transfer_size=""1"">");
       for I in R'Range loop
          Cai.Log.Client.Info (Log, Cai.Log.Image (I) & " .. ", False);

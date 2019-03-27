@@ -21,6 +21,6 @@ package Run is
 
    function Finished (R : Run_Type) return Boolean;
 
-   procedure Xml (Xml_Log : in out Cai.Log.Client_Session; R : Run_Type; Log : in out Cai.Log.Client_Session);
+   procedure Xml (Xml_Log : in out Cai.Log.Client_Session; R : Run_Type; Cold : Boolean; Log : in out Cai.Log.Client_Session);
 
 end Run;
