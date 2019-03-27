@@ -40,16 +40,17 @@ package body Test is
 
    Progress : Long_Integer := -1;
    Start : Ada.Real_Time.Time;
+   Last : Ada.Real_Time.Time;
 
    function Remain (S : Ada.Real_Time.Time;
                     C : Ada.Real_Time.Time;
                     P : Long_Integer) return Duration
    is
    begin
-      if P < 1 or P > 99 then
+      if P < 1 or P > 999 then
          return Duration (0);
       end if;
-      return Ada.Real_Time.To_Duration (((C - S) / Integer (P)) * Integer (100 - P));
+      return Ada.Real_Time.To_Duration (((C - S) / Integer (P)) * Integer (1000 - P));
    end Remain;
 
    procedure Bounds_Check (C : in out Cai.Block.Client_Session;
@@ -87,6 +88,7 @@ package body Test is
       Client.Enqueue_Read (C, Request);
       Client.Submit(C);
       Start := Ada.Real_Time.Clock;
+      Last := Ada.Real_Time.Clock;
    end Bounds_Check;
 
    function Bounds_Check_Finished (T : Test_State) return Boolean
@@ -172,10 +174,15 @@ package body Test is
       Success := True;
       Write_Recv (C, T, Success, L);
       Write_Send (C, T, Success, L);
-      if T.Count >= 50 and then Long_Integer (T.Written) / Long_Integer (T.Count / 50) /= Progress then
-         Progress := Long_Integer (T.Written) / Long_Integer (T.Count / 50);
-         Cai.Log.Client.Info (L, "Writing... (" & Cai.Log.Image (Progress) & "%)");
-         Current := Ada.Real_Time.Clock;
+      Current := Ada.Real_Time.Clock;
+      if Ada.Real_Time.To_Duration (Current - Last) > Duration(2) then
+         Last := Current;
+         Progress := Long_Integer (T.Written) / Long_Integer (T.Count / 500);
+         Cai.Log.Client.Info (L, "Writing... ("
+                                 & Cai.Log.Image (Progress / 10)
+                                 & "."
+                                 & Cai.Log.Image (Progress rem 10)
+                                 & "%)");
          Cai.Log.Client.Info (L, "Elapsed: "
                                  & Cai.Log.Image (Ada.Real_Time.To_Duration (Current - Start))
                                  & " Remaining: "
@@ -271,10 +278,15 @@ package body Test is
             Hash_Block (T.Read_Context, Buf (1 .. Cai.Block.Count (1) * Client.Block_Size (C)));
          end;
       end loop;
-      if T.Count >= 50 and then Long_Integer (T.Read) / Long_Integer (T.Count / 50) + 50 /= Progress then
-         Progress := Long_Integer (T.Read) / Long_Integer (T.Count / 50) + 50;
-         Cai.Log.Client.Info (L, "Reading... (" & Cai.Log.Image (Progress) & "%)");
-         Current := Ada.Real_Time.Clock;
+      Current := Ada.Real_Time.Clock;
+      if Ada.Real_Time.To_Duration (Current - Last) > Duration(2) then
+         Last := Current;
+         Progress := Long_Integer (T.Read) / Long_Integer (T.Count / 500) + 500;
+         Cai.Log.Client.Info (L, "Reading... ("
+                                 & Cai.Log.Image (Progress / 10)
+                                 & "."
+                                 & Cai.Log.Image (Progress rem 10)
+                                 & "%)");
          Cai.Log.Client.Info (L, "Elapsed: "
                                  & Cai.Log.Image (Ada.Real_Time.To_Duration (Current - Start))
                                  & " Remaining: "
