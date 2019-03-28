@@ -21,14 +21,12 @@ package body Ada_Block_Test is
       Acknowledged_Blocks : Integer;
       Block_Size : Cai.Block.Size;
 
-      procedure Wait_For_Ready with
+      procedure Wait_For_Ready (R : Block_Client.Block_Client.Request) with
          Pre => Block_Client.Block_Client.Initialized (Client),
-         Post => Block_Client.Block_Client.Ready (Client);
-
-      procedure Wait_For_Ready
+         Post => Block_Client.Block_Client.Ready (Client, R)
       is
       begin
-         while not Block_Client.Block_Client.Ready (Client) loop
+         while not Block_Client.Block_Client.Ready (Client, R) loop
             null;
          end loop;
       end Wait_For_Ready;
@@ -43,14 +41,14 @@ package body Ada_Block_Test is
       Write_Req.Start := 1;
       Write_Req.Length := 1;
       Buf (1 .. Cai.Block.Unsigned_Long (Block_Size)) := (others => Cai.Block.Byte (Character'Pos('a')));
-      Wait_For_Ready;
+      Wait_For_Ready (Write_Req);
       Block_Client.Block_Client.Enqueue_Write (Client, Write_Req, Buf (1 .. Cai.Block.Unsigned_Long (Block_Size)));
       Write_Req.Start := 3;
-      Wait_For_Ready;
+      Wait_For_Ready (Write_Req);
       Block_Client.Block_Client.Enqueue_Write (Client, Write_Req, Buf (1 .. Cai.Block.Unsigned_Long (Block_Size)));
       Buf (1 .. Cai.Block.Unsigned_Long (Block_Size)) := (others => Cai.Block.Byte (Character'Pos('d')));
       Write_Req.Start := 2;
-      Wait_For_Ready;
+      Wait_For_Ready (Write_Req);
       Block_Client.Block_Client.Enqueue_Write (Client, Write_Req, Buf (1 .. Cai.Block.Unsigned_Long (Block_Size)));
       Block_Client.Block_Client.Enqueue_Sync (Client, Sync_Req);
       Block_Client.Block_Client.Submit (Client);
@@ -71,13 +69,13 @@ package body Ada_Block_Test is
       Gnat.Io.Put_Line ("Reading...");
       Read_Req.Start := 1;
       Read_Req.Length := 1;
-      Wait_For_Ready;
+      Wait_For_Ready (Read_Req);
       Block_Client.Block_Client.Enqueue_Read (Client, Read_Req);
       Read_Req.Start := 2;
-      Wait_For_Ready;
+      Wait_For_Ready (Read_Req);
       Block_Client.Block_Client.Enqueue_Read (Client, Read_Req);
       Read_Req.Start := 3;
-      Wait_For_Ready;
+      Wait_For_Ready (Read_Req);
       Block_Client.Block_Client.Enqueue_Read (Client, Read_Req);
       Block_Client.Block_Client.Submit (Client);
       Acknowledged_Blocks := 0;
@@ -104,7 +102,7 @@ package body Ada_Block_Test is
       Write_Req.Start := 4;
       Write_Req.Length := 2;
       Buf (1 .. Cai.Block.Unsigned_Long (Block_Size) * Cai.Block.Unsigned_Long (Write_Req.Length)) := (others => Cai.Block.Byte (Character'Pos ('x')));
-      Wait_For_Ready;
+      Wait_For_Ready (Write_Req);
       Block_Client.Block_Client.Enqueue_Write (Client, Write_Req, Buf (1 .. Cai.Block.Unsigned_Long (Block_Size) * Cai.Block.Unsigned_Long (Write_Req.Length)));
       Block_Client.Block_Client.Enqueue_Sync (Client, Sync_Req);
       Block_Client.Block_Client.Submit (Client);
@@ -125,7 +123,7 @@ package body Ada_Block_Test is
       Gnat.Io.Put_Line ("Reading 2 block request...");
       Read_Req.Start := 4;
       Read_Req.Length := 2;
-      Wait_For_Ready;
+      Wait_For_Ready (Read_Req);
       Block_Client.Block_Client.Enqueue_Read (Client, Read_Req);
       Block_Client.Block_Client.Submit (Client);
       Acknowledged_Blocks := 0;
