@@ -17,7 +17,8 @@ is
                               Curr_Snap_ID :        Snapshot_ID_Type)
    return Boolean
    is
-      Lowest_Snap_ID : Snapshot_ID_Type := Snapshot_ID_Invalid;
+      Lowest_Snap_ID       : Snapshot_ID_Type := Snapshot_ID_Type'Last;
+      Lowest_Snap_ID_Valid : Boolean          := False;
    begin
       for Snap of Active_Snaps loop
          if
@@ -26,16 +27,17 @@ is
             Snap.ID /= Curr_Snap_ID and then
             Snap.ID < Lowest_Snap_ID
          then
-            Lowest_Snap_ID := Snap.ID;
+            Lowest_Snap_ID       := Snap.ID;
+            Lowest_Snap_ID_Valid := True;
          end if;
       end loop;
 
-      if Lowest_Snap_ID = Snapshot_ID_Invalid then
+      if not Lowest_Snap_ID_Valid then
          return False;
       end if;
 
-      Active_Snaps (Snapshots_Index_Type (Lowest_Snap_ID)).ID :=
-         Snapshot_ID_Invalid;
+      Snapshot_Valid (
+         Active_Snaps (Snapshots_Index_Type (Lowest_Snap_ID)), False);
 
       return True;
    end Discard_Snapshot;

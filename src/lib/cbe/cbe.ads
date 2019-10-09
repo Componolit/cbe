@@ -63,6 +63,7 @@ is
    type Tag_Type                     is mod 2**32;
    type Number_Of_Blocks_Type        is mod 2**32;
    type Snapshot_ID_Type             is mod 2**32;
+   type Snapshot_Valid_Storage_Type  is range 0 .. 2**8 - 1 with Size => 8;
    type Snapshot_Flags_Type          is mod 2**32;
    type Key_ID_Type                  is range 0 .. 2**32 - 1;
    type Key_ID_Storage_Type          is range 0 .. 2**32 - 1 with Size => 32;
@@ -141,6 +142,7 @@ is
       Gen         : Generation_Type;
       Nr_Of_Leafs : Tree_Number_Of_Leafs_Type;
       Height      : Tree_Level_Type;
+      Valid       : Snapshot_Valid_Storage_Type;
       ID          : Snapshot_ID_Type;
       Flags       : Snapshot_Flags_Type;
    end record;
@@ -151,6 +153,7 @@ is
       Gen         at 40 range 0 ..  8 * 8 - 1;
       Nr_Of_Leafs at 48 range 0 ..  8 * 8 - 1;
       Height      at 56 range 0 ..  4 * 8 - 1;
+      Valid       at 60 range 0 ..  1 * 8 - 1;
       ID          at 64 range 0 ..  4 * 8 - 1;
       Flags       at 68 range 0 ..  4 * 8 - 1;
    end record;
@@ -161,7 +164,8 @@ is
        8 * 8 + --  Gen
        8 * 8 + --  Nr_Of_Leafs
        4 * 8 + --  Height
-       4 * 8 + --  <Padding>
+       1 * 8 + --  Valid
+       3 * 8 + --  <Padding>
        4 * 8 + --  ID
        4 * 8;  --  Flags
 
@@ -177,23 +181,20 @@ is
    return Tree_Level_Type
    is (Tree_Level_Type (Tree_Level_Index_Type'Last) + 1);
 
-   function Snapshot_ID_Invalid
-   return Snapshot_ID_Type
-   is (Snapshot_ID_Type'Last);
+   function Snapshot_Valid (Snap : Snapshot_Type)
+   return Boolean;
+
+   procedure Snapshot_Valid (
+      Snap  : in out Snapshot_Type;
+      Valid :        Boolean);
 
    function Snapshot_Flags_Keep_Mask
    return Snapshot_Flags_Type
    is (1);
 
-   function Snapshot_Valid (Snap : Snapshot_Type)
-   return Boolean
-   is (Snap.ID /= Snapshot_ID_Invalid);
-
    function Snapshot_Keep (Snap : Snapshot_Type)
    return Boolean
    is ((Snap.Flags and Snapshot_Flags_Keep_Mask) /= 0);
-
-   procedure Snapshot_Discard (Snap : in out Snapshot_Type);
 
    type Snapshots_Index_Type is range 0 .. 47;
    type Snapshots_Type
