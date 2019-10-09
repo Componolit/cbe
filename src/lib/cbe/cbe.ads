@@ -37,11 +37,13 @@ is
 
    type Byte_Type is range 0 .. 255 with Size => 8;
 
+   Block_Size : constant := 4096;
+
    type Block_Data_Type
-   is array (0 .. 4095) of Byte_Type with Size => 4096 * 8;
+   is array (0 .. Block_Size - 1) of Byte_Type with Size => Block_Size * 8;
 
    type Translation_Data_Type
-   is array (0 .. 0) of Block_Data_Type with Size => 1 * 4096 * 8;
+   is array (0 .. 0) of Block_Data_Type with Size => 1 * Block_Size * 8;
 
    type Number_Of_Primitives_Type    is mod 2**64;
    type Index_Type                   is mod 2**64;
@@ -126,7 +128,7 @@ is
    pragma Pack (Type_II_Node_Block_Type);
 
    type Query_Data_Type
-   is array (0 .. 0) of Block_Data_Type with Size => 1 * 4096 * 8;
+   is array (0 .. 0) of Block_Data_Type with Size => 1 * Block_Size * 8;
 
    --
    --  The CBE::Snapshot stores the information about a given tree within
@@ -324,7 +326,7 @@ is
    type Superblocks_Index_Type is range 0 .. 7;
    type Superblocks_Type
    is array (Superblocks_Index_Type) of Superblock_Type
-   with Size => 8 * 4096 * 8;
+   with Size => 8 * Block_Size * 8;
 
    type Timeout_Request_Type is record
       Valid   : Boolean;

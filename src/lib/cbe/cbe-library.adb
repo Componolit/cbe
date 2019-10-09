@@ -439,8 +439,8 @@ is
       ---------------------------------
 
       --
-      --  An arbitrary sized Block Request will be cut into 4096 byte
-      --  sized primitves by the Splitter module.
+      --  An arbitrary sized Block Request will be cut into Block_Size-sized
+      --  primitves by the Splitter module.
       --
       Loop_Pool_Pending_Requests :
       loop

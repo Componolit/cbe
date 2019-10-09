@@ -36,8 +36,9 @@ is
 
    type Data_Index_Type is range 0 .. 0;
 
-   type Data_Type is array (Data_Index_Type) of Block_Data_Type
-      with Size => 4096 * 8 * 1;
+   type Data_Type
+   is array (Data_Index_Type) of Block_Data_Type
+   with Size => Block_Size * 8 * 1;
 
    --
    --  Initialize_Object
