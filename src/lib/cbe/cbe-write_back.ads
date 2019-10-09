@@ -334,7 +334,7 @@ private
    --  entry 0               -> leaf node
    --  entry 1 ... entry N-1 -> inner node
    --  entry N-1             -> root node
-   --/
+   --
    type Entries_Type is array (Tree_Level_Index_Type'Range) of Entry_Type;
    type Hashes_Type  is array (Tree_Level_Index_Type'Range) of Hash_Type;
 

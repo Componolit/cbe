@@ -37,37 +37,8 @@ is
       Active_Snaps (Snapshots_Index_Type (Lowest_Snap_ID)).ID :=
          Snapshot_ID_Invalid;
 
-      --  DBG ("discard snapshot: ", Snap);
       return True;
    end Discard_Snapshot;
-
---
---  Not translated as only for debugging
---
---   procedure Dump_Cur_Sb_Info () const
---   is begin
---      CBE::Superblock const &sb := Obj.Superblocks (Obj.Cur_SB);
---      Snapshot_Type    const &Snap := sb.Snapshots (Obj.Cur_SB);
---
---      CBE::Physical_Block_Address const root_Number := Snap.PBA;
---      CBE::Height                 const height      := Snap.Height;
---      CBE::Number_Of_Leafs       const leafs      := Snap.Leafs;
---
---      CBE::Degree                 const degree      := sb.Degree;
---      CBE::Physical_Block_Address const free_Number := sb.Free_Number;
---      CBE::Number_Of_Leafs       const free_Leafs := sb.Free_Leafs;
---      CBE::Height                 const free_Height := sb.Free_Height;
---
---      Genode::log ("Virtual block-device info in SB (", Obj.Cur_SB, "): ",
---                  " SNAP (", Obj.Cur_SB, "): ",
---                  "tree height: ", height, " ",
---                  "edges per node: ", degree, " ",
---                  "leafs: ", leafs, " ",
---                  "root block address: ", root_Number, " ",
---                  "free block address: ", free_Number, " ",
---                  "free leafs: (", free_Leafs, "/", free_Height, ")"
---      );
---   end Dump_Cur_Sb_Info;
 
    function Cache_Dirty (Obj : Object_Type)
    return Boolean
@@ -144,8 +115,7 @@ is
    begin
 
       if Snap_Slot = Snapshot_ID_Invalid_Slot then
-         --  Genode::error ("snapshot slot not found");
-         raise Program_Error; --  throw Invalid_Snapshot_Slot;
+         raise Program_Error;
       end if;
 
       --
@@ -153,13 +123,11 @@ is
       --  tree topology. Make sure it fits.
       --
       if Height > Tree_Max_Height or else Height < Tree_Min_Height then
-         --  Genode::error ("tree height of ", height, " not supported");
-         raise Program_Error; --  throw Invalid_Tree;
+         raise Program_Error;
       end if;
 
       if Degree < Tree_Min_Degree then
-         --  Genode::error ("tree outer-degree of ", degree, " not supported");
-         raise Program_Error; --  throw Invalid_Tree;
+         raise Program_Error;
       end if;
 
       Obj.Execute_Progress := False;
@@ -208,14 +176,6 @@ is
       Obj.Back_End_Req_Prim       := Request_Primitive_Invalid;
 
    end Initialize_Object;
-
---
---  Not translated as only for debugging
---
---   procedure Dump_Cur_SB_Info () const
---   is begin
---      _Dump_Cur_SB_Info ();
---   end Dump_Cur_SB_Info;
 
    function Curr_SB (Obj : Object_Type)
    return Superblocks_Index_Type
@@ -337,7 +297,6 @@ is
          if Free_Tree.Execute_Progress (Obj.Free_Tree_Obj) then
             Progress := True;
          end if;
-         --  LOG_PROGRESS (FT_Progress);
       end;
 
       --
@@ -366,8 +325,6 @@ is
                not Primitive.Valid (Prim) or else
                Primitive.Success (Prim);
 
-            --  DBG ("allocating new blocks failed: ",
-            --       Obj.Free_Tree_Retry_Count);
             if Obj.Free_Tree_Retry_Count < Free_Tree_Retry_Limit then
 
                Declare_Curr :
@@ -403,11 +360,8 @@ is
                exit Loop_Free_Tree_Completed_Prims;
             end if;
 
-            --  Genode::error ("could not find enough useable blocks");
             Pool.Mark_Completed_Primitive (Obj.Request_Pool_Obj, Prim);
-            --  DBG ("-----------------------> current primitive: ",
-            --       current_Primitive, " FINISHED");
-            --  current_Primitive :=  : Primitive.Object_Type{ };
+
             --  FIXME
             Virtual_Block_Device.Trans_Resume_Translation (Obj.VBD);
             Free_Tree.Drop_Completed_Primitive (Obj.Free_Tree_Obj, Prim);
@@ -526,14 +480,10 @@ is
             --  that mainly is intended to block write primitives--
             --
             if Obj.Secure_Superblock then
-               --  DBG ("prevent processing new primitives while securing",
-               --       "super-block");
                exit Loop_Splitter_Generated_Prims;
             end if;
 
             Splitter.Drop_Generated_Primitive (Obj.Splitter_Obj, Prim);
-
-            --  current_Primitive := Prim;
 
             --
             --  For every new Request, we have to use the currlently active
@@ -552,11 +502,6 @@ is
          end Declare_Prim_3;
          Progress := True;
       end loop Loop_Splitter_Generated_Prims;
-
-      --  if current_Primitive.Valid () then
-      --    DBG ("-----------------------> current primitive: ",
-      --         current_Primitive);
-      --  end if;
 
       --------------------
       --  VBD handling  --
@@ -578,7 +523,6 @@ is
       if Virtual_Block_Device.Execute_Progress (Obj.VBD) then
          Progress := True;
       end if;
-      --  LOG_PROGRESS (vbd_Progress);
 
       ------------------------------
       --  Cache_Flusher handling  --
@@ -612,8 +556,7 @@ is
                not Primitive.Valid (Prim);
 
             if not Primitive.Success (Prim) then
-               --  DBG (Prim);
-               raise Program_Error; --  throw Primitive_Failed;
+               raise Program_Error;
             end if;
 
             Cache.Mark_Clean (
@@ -621,7 +564,6 @@ is
                Physical_Block_Address_Type (
                   Primitive.Block_Number (Prim)));
 
-            --  DBG ("mark_Clean: ", PBA);
             Cache_Flusher.Drop_Completed_Primitive (
                Obj.Cache_Flusher_Obj, Prim);
 
@@ -698,8 +640,7 @@ is
                not Primitive.Valid (Prim);
 
             if not Primitive.Success (Prim) then
-               --  DBG (Prim);
-               raise Program_Error; --  throw Primitive_Failed;
+               raise Program_Error;
             end if;
 
             if Obj.Seal_Generation then
@@ -721,8 +662,6 @@ is
                      if Cache.Dirty (Obj.Cache_Obj, Cache_Index) then
 
                         Cache_Dirty := True;
-                        --  DBG (" i: ", Idx.Value, " PBA: ", PBA, " needs",
-                        --       " flushing");
 
                         Cache_Flusher.Submit_Request (
                            Obj.Cache_Flusher_Obj,
@@ -736,7 +675,6 @@ is
                   --  finished doing that.
                   --
                   if Cache_Dirty then
-                     --  DBG ("CACHE FLUSH NEEDED: Progress: ", Progress);
                      Progress := True;
                      exit Loop_WB_Completed_Prims;
                   end if;
@@ -771,9 +709,7 @@ is
                   end loop For_Snapshots;
 
                   if Next_Snap = Obj.Cur_Snap then
-                     --  Genode::error ("could not find free snapshot slot");
-                     --  proper handling pending--
-                     raise Program_Error; --  throw Invalid_Snapshot_Slot;
+                     raise Program_Error;
                   end if;
 
                   --
@@ -787,9 +723,6 @@ is
                         Snapshots (Snapshots_Index_Type (Next_Snap)),
                      Prim,
                      Obj.Last_Snapshot_ID);
-
-                  --  DBG ("new snapshot for generation: ", Obj.Cur_Gen,
-                  --       " Snap: ", Snap);
 
                   Obj.Cur_Snap := Next_Snap;
                end Declare_Next_Snap;
@@ -826,14 +759,11 @@ is
             Pool.Mark_Completed_Primitive (Obj.Request_Pool_Obj, Prim);
 
          end Declare_Prim_6;
-         --  DBG ("-----------------------> current primitive: ",
-         --       current_Primitive, " FINISHED");
-         --  current_Primitive :=  : Primitive.Object_Type{ };
          Progress := True;
 
          --
          --  FIXME stalling translation as long as the write-back takes places
-         --     is not a good idea
+         --        is not a good idea
          --
          Virtual_Block_Device.Trans_Resume_Translation (Obj.VBD);
 
@@ -854,8 +784,10 @@ is
                not Primitive.Valid (Prim) or else
                not Crypto.Primitive_Acceptable (Obj.Crypto_Obj);
 
-            --  the Data will be copied into the Crypto module's internal
+            --
+            --  The Data will be copied into the Crypto module's internal
             --  buffer
+            --
             Declare_Crypto_Data :
             declare
                Plain_Data_Index : constant Write_Back.Data_Index_Type :=
@@ -919,7 +851,6 @@ is
             Prim : constant Primitive.Object_Type :=
                Write_Back.Peek_Generated_Cache_Primitive (Obj.Write_Back_Obj);
          begin
-            --  DBG (Prim);
             exit Loop_WB_Generated_Cache_Prims when
                not Primitive.Valid (Prim);
 
@@ -944,7 +875,6 @@ is
                --  check and Request both.
                --
                if not Cache.Data_Available (Obj.Cache_Obj, PBA) then
-                  --  DBG ("Cache miss PBA: ", PBA);
                   if Cache.Request_Acceptable (Obj.Cache_Obj, PBA) then
                      Cache.Submit_Request (Obj.Cache_Obj, PBA);
                   end if;
@@ -953,7 +883,6 @@ is
 
                if PBA /= Update_PBA then
                   if not Cache.Data_Available (Obj.Cache_Obj, Update_PBA) then
-                     --  DBG ("Cache miss Update_PBA: ", Update_PBA);
                      if Cache.Request_Acceptable (Obj.Cache_Obj, Update_PBA)
                      then
                         Cache.Submit_Request (Obj.Cache_Obj, Update_PBA);
@@ -962,16 +891,13 @@ is
                   end if;
                end if;
 
-               --  read the needed blocks first--
+               --  read the needed blocks first
                if Cache_Miss then
-                  --  DBG ("Cache_Miss");
                   exit Loop_WB_Generated_Cache_Prims;
                end if;
 
                Write_Back.Drop_Generated_Cache_Primitive (
                   Obj.Write_Back_Obj, Prim);
-
-               --  DBG ("Cache hot PBA: ", PBA, " Update_PBA: ", Update_PBA);
 
                --
                --  To keep it simply, always set both properly - even if
@@ -996,8 +922,10 @@ is
                      Obj.Cache_Data (Index),
                      Obj.Cache_Data (Update_Index));
 
-                  --  make the potentially new entry as dirty so it gets
+                  --
+                  --  Make the potentially new entry as dirty so it gets
                   --  flushed next time
+                  --
                   Cache.Mark_Dirty (Obj.Cache_Obj, Update_PBA);
 
                end Declare_Indices;
@@ -1026,9 +954,6 @@ is
          Obj.Superblocks (Curr_SB (Obj)).Snapshot_ID :=
             Snapshot_ID_Type (Obj.Cur_SB);
 
-         --  DBG ("secure current super-block Gen: ", Obj.Cur_Gen,
-         --     " Snap.ID: ", Obj.Cur_SB);
-
          Sync_Superblock.Submit_Request (
             Obj.Sync_SB_Obj, Obj.Cur_SB, Obj.Cur_Gen);
       end if;
@@ -1047,11 +972,9 @@ is
                not Primitive.Valid (Prim);
 
             if not Primitive.Success (Prim) then
-               --  DBG (Prim);
-               raise Program_Error; --  throw Primitive_Failed;
+               raise Program_Error;
             end if;
 
-            --  DBG ("primitive: ", Prim);
             Declare_Next_SB :
             declare
                Next_SB : constant Superblock_Index_Type :=
@@ -1061,7 +984,7 @@ is
                Obj.Superblocks (Superblocks_Index_Type (Next_SB)) :=
                   Obj.Superblocks (Curr_SB (Obj));
 
-               --  handle state--
+               --  handle state
                Obj.Cur_SB                  := Next_SB;
                Obj.Last_Secured_Generation :=
                   Sync_Superblock.Peek_Completed_Generation (
@@ -1139,8 +1062,7 @@ is
                Primitive.Operation (Prim) = Read;
 
             if not Primitive.Success (Prim) then
-               --  DBG (Prim);
-               raise Program_Error; --  throw Primitive_Failed;
+               raise Program_Error;
             end if;
 
             Declare_Index_2 :
@@ -1187,8 +1109,6 @@ is
       if Cache.Execute_Progress (Obj.Cache_Obj) then
          Progress := True;
       end if;
-
-      --  LOG_PROGRESS (Cache_Progress);
 
       --
       --  Read Data from the block device to fill the Cache.
@@ -1244,8 +1164,7 @@ is
             exit Loop_IO_Completed_Prims when not Primitive.Valid (Prim);
 
             if not Primitive.Success (Prim) then
-               --  DBG (Prim);
-               raise Program_Error; --  throw Primitive_Failed;
+               raise Program_Error;
             end if;
 
             Declare_Index_3 :
@@ -1382,7 +1301,7 @@ is
          return;
       end if;
 
-      --  I/O module--
+      --  I/O module
       declare
          Prim : constant Primitive.Object_Type :=
             Block_IO.Peek_Generated_Primitive (Obj.IO_Obj);
@@ -1499,7 +1418,7 @@ is
          return;
       end if;
 
-      --  I/O module--
+      --  I/O module
       declare
          Prim : constant Primitive.Object_Type :=
             Block_IO.Peek_Generated_Primitive (Obj.IO_Obj);
@@ -1610,7 +1529,9 @@ is
 
       --
       --  When it was a read Request, we need access to the data the Crypto
-      --  module should decrypt. --  XXX this should be handled in I/O backend
+      --  module should decrypt.
+      --
+      --  XXX this should be handled in I/O backend
       --
       declare
          Prim : constant Primitive.Object_Type :=
@@ -1727,8 +1648,10 @@ is
       );
    end Assign_Front_End_Req_Prim;
 
+   --
    --  FIXME move Front_End_Req_Prim allocation into execute,
    --       turn procedure into function
+   --
    procedure Client_Data_Required (
       Obj : in out Object_Type;
       Req :    out Request.Object_Type)
@@ -1813,8 +1736,8 @@ is
          end;
 
          Free_Tree.Drop_Completed_Primitive (Obj.Free_Tree_Obj, Prim);
---         _Frontend_Req_Prim := Req_Prim { };
---  XXX check if default constructor produces invalid object
+
+         --  XXX check if default constructor produces invalid object
          Obj.Front_End_Req_Prim := Request_Primitive_Invalid;
          return True;
 
@@ -1926,12 +1849,6 @@ is
                   ID : constant Tree_Child_Index_Type :=
                      Virtual_Block_Device.Index_For_Level (Obj.VBD, VBA, I);
 
---                  CBE::Block_Data const &data :=
---                     _Cache_Data.Item (idx.Value);
---                  uint32_T const id := _VBD->index_For_Level (VBA, i);
---                  CBE::Type_I_Node const *n :=
---                     reinterpret_Cast<CBE::Type_I_Node const*>(&data);
-
                   Node : Type_I_Node_Block_Type
                   with Address => Obj.Cache_Data (Idx)'Address;
 
@@ -1963,7 +1880,7 @@ is
 
             end loop;
 
-            --  check root node--
+            --  check root node
             if Snap.Gen = Obj.Cur_Gen or else Snap.Gen = 0 then
                New_PBAs (Tree_Level_Index_Type (Trans_Height - 1)) :=
                   Old_PBAs (Natural (Trans_Height - 1)).PBA;

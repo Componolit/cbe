@@ -152,13 +152,6 @@ is
       Prim :        Primitive.Object_Type)
    is
    begin
-      --  Print_String ("VBD.SubmPrim: PBA: ");
-      --  Print_Word_Hex (PBA);
-      --  Print_String ("Gen: ");
-      --  Print_Word_Dec (Gen);
-      --  Print_String ("Prim: ");
-      --  Print_Primitive (Prim);
-      --  Print_Line_Break;
       Translation.Submit_Primitive (Obj.Trans, PBA, Gen, Hash, Prim);
    end Submit_Primitive;
 
@@ -206,7 +199,6 @@ is
       end Declare_Trans_Progress;
 
       --  FIXME prevent module from checking the cache again and again
-
       Endless_Loop :
       loop
          Declare_Primitive :
@@ -225,17 +217,8 @@ is
             begin
 
                if not Cache.Data_Available (Cach, PBA) then
-
-                  --  Print_String ("VBD.Exe: data not available: pba: ");
-                  --  Print_Word_Hex (PBA);
-                  --  Print_Line_Break;
-
                   if Cache.Request_Acceptable_Logged (Cach, PBA) then
                      Cache.Submit_Request_Logged (Cach, PBA);
-
-                     --  Print_String ("VBD.Exe: submit cache request: pba: ");
-                     --  Print_Word_Hex (PBA);
-                     --  Print_Line_Break;
 
                      --
                      --  Only report progress on the initial request, all
@@ -262,11 +245,6 @@ is
 
                   Translation.Discard_Generated_Primitive (
                      Obj.Trans);
-
-                  --  Print_String ("VBD.Exe: mark gen prim complete: pba: ");
-                  --  Print_Word_Hex (PBA);
-                  --  Print_Line_Break;
-
                end if;
             end Declare_PBA;
          end Declare_Primitive;
