@@ -64,7 +64,8 @@ is
    type Number_Of_Blocks_Type        is mod 2**32;
    type Snapshot_ID_Type             is mod 2**32;
    type Snapshot_Flags_Type          is mod 2**32;
-   type Key_ID_Type                  is mod 2**32;
+   type Key_ID_Type                  is range 0 .. 2**32 - 1;
+   type Key_ID_Storage_Type          is range 0 .. 2**32 - 1 with Size => 32;
    type Operation_Type               is (Read, Write, Sync);
 
    --  FIXME should be architecture-dependent
@@ -109,7 +110,7 @@ is
       Last_VBA    : Virtual_Block_Address_Type;
       Alloc_Gen   : Generation_Type;
       Free_Gen    : Generation_Type;
-      Last_Key_ID : Key_ID_Type;
+      Last_Key_ID : Key_ID_Storage_Type;
       Reserved    : Boolean;
       Padding     : Type_II_Node_Padding_Type;
    end record with Size =>
@@ -257,7 +258,7 @@ is
    --
    type Key_Type is record
       Value : Key_Value_Type;
-      ID    : Key_ID_Type;
+      ID    : Key_ID_Storage_Type;
    end record with Size =>
       64 * 8 + --  Value
        4 * 8;  --  ID
