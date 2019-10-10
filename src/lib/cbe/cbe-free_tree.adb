@@ -966,16 +966,12 @@ is
             if
                Physical_Block_Address_Type (Primitive.Block_Number (Prim)) =
                Obj.WB_IOs (WB_IO_Entries_Index_Type (WB_IO_Index)).PBA
+            and then
+               Obj.WB_IOs (WB_IO_Entries_Index_Type (WB_IO_Index)).State =
+                  Pending
             then
-               if
-                  Obj.WB_IOs (WB_IO_Entries_Index_Type (WB_IO_Index)).State =
-                     Pending
-               then
-                  Obj.WB_IOs (WB_IO_Entries_Index_Type (WB_IO_Index)).State :=
-                     In_Progress;
-               else
-                  null;
-               end if;
+               Obj.WB_IOs (WB_IO_Entries_Index_Type (WB_IO_Index)).State :=
+                  In_Progress;
             end if;
          end loop For_WB_IOs;
       else
@@ -992,27 +988,23 @@ is
          if Obj.Curr_Type_2.State = In_Progress then
             Obj.Curr_Type_2.State := Complete;
          else
-            null;
+            raise Program_Error;
          end if;
       elsif Primitive.Tag (Prim) = Tag_Write_Back then
          For_WB_IOs :
          for WB_IO_Index in Tree_Level_Index_Type'Range loop
             if
                Physical_Block_Address_Type (Primitive.Block_Number (Prim)) =
-               Obj.WB_IOs (WB_IO_Entries_Index_Type (WB_IO_Index)).PBA
+                  Obj.WB_IOs (WB_IO_Entries_Index_Type (WB_IO_Index)).PBA
+            and then
+               Obj.WB_IOs (WB_IO_Entries_Index_Type (WB_IO_Index)).State =
+                  In_Progress
             then
-               if
-                  Obj.WB_IOs (WB_IO_Entries_Index_Type (WB_IO_Index)).State =
-                     In_Progress
-               then
-                  Obj.WB_IOs (WB_IO_Entries_Index_Type (WB_IO_Index)).State :=
-                     Complete;
+               Obj.WB_IOs (WB_IO_Entries_Index_Type (WB_IO_Index)).State :=
+                  Complete;
 
-                  if not Primitive.Success (Prim) then
-                     null;
-                  end if;
-               else
-                  null;
+               if not Primitive.Success (Prim) then
+                  raise Program_Error;
                end if;
             end if;
          end loop For_WB_IOs;
