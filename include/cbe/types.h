@@ -500,26 +500,20 @@ namespace Cbe {
 
 
 	/*
-	 * The Superblock_index
+	 * The Superblocks_index
 	 *
 	 * (It stands to reason if the type is needed.)
 	 */
-	struct Superblock_index
+	struct Superblocks_index
 	{
-		enum { INVALID  = 255, };
-
 		uint64_t value;
 
-		Superblock_index(uint64_t val) : value(val) { }
-
-		Superblock_index() : value(INVALID) { }
+		Superblocks_index(uint64_t val) : value(val) { }
 
 		void print(Genode::Output &out) const
 		{
 			Genode::print(out, value);
 		}
-
-		bool valid() const { return value != INVALID; }
 	};
 
 
