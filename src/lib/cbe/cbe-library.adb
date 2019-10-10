@@ -84,7 +84,6 @@ is
    function Superblock_Snapshot_Slot (SB : Superblock_Type)
    return Snapshot_ID_Type
    is
-      Snap_Slot : Snapshot_ID_Type := Snapshot_ID_Invalid_Slot;
    begin
       For_Snapshots :
       for Snap_Index in Snapshots_Index_Type loop
@@ -92,11 +91,10 @@ is
             Snapshot_Valid (SB.Snapshots (Snap_Index)) and then
             SB.Snapshots (Snap_Index).ID = SB.Snapshot_ID
          then
-            Snap_Slot := Snapshot_ID_Type (Snap_Index);
-            exit For_Snapshots;
+            return Snapshot_ID_Type (Snap_Index);
          end if;
       end loop For_Snapshots;
-      return Snap_Slot;
+      raise Program_Error;
    end Superblock_Snapshot_Slot;
 
    procedure Initialize_Object (
@@ -115,11 +113,6 @@ is
          SBs (Curr_SB).Snapshots (
             Snapshots_Index_Type (Snap_Slot)).Nr_Of_Leafs;
    begin
-
-      if Snap_Slot = Snapshot_ID_Invalid_Slot then
-         raise Program_Error;
-      end if;
-
       --
       --  The Current implementation is limited with regard to the
       --  tree topology. Make sure it fits.

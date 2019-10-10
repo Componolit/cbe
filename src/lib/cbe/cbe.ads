@@ -204,10 +204,6 @@ is
    is array (0 .. Natural (Tree_Level_Index_Type'Last))
       of Type_1_Node_Info_Type;
 
-   function Snapshot_ID_Invalid_Slot
-   return Snapshot_ID_Type
-   is (Snapshot_ID_Type (Snapshots_Index_Type'Last) + 1);
-
    function Type_1_Node_Info_Invalid
    return Type_1_Node_Info_Type
    is (
