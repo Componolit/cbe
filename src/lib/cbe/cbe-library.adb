@@ -1706,9 +1706,7 @@ is
             return False;
          end if;
 
-         if
-           not Virtual_Block_Device.Trans_Can_Get_Type_1_Info_SPARK (
-                  Obj.VBD, Prim)
+         if not Virtual_Block_Device.Trans_Can_Get_Type_1_Info (Obj.VBD, Prim)
          then
             return False;
          end if;

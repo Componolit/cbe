@@ -335,10 +335,7 @@ is
             --
             --  (Currently not implemented.)
             --
-            if not
-               Translation.Can_Get_Type_1_Info_SPARK (
-                  Obj.Trans, Prim)
-            then
+            if not Translation.Can_Get_Type_1_Info (Obj.Trans, Prim) then
                raise Program_Error;
             end if;
             Translation.Get_Type_1_Info (

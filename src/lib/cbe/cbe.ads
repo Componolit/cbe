@@ -70,9 +70,6 @@ is
    type Key_ID_Storage_Type          is range 0 .. 2**32 - 1 with Size => 32;
    type Operation_Type               is (Read, Write, Sync);
 
-   --  FIXME should be architecture-dependent
-   type Address_Type is mod 2**64;
-
    type Hash_Type is array (1 .. 32) of Byte_Type with Size => 32 * 8;
 
    type Type_I_Node_Padding_Type is array (0 .. 15) of Byte_Type;

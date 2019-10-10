@@ -113,15 +113,6 @@ is
    --
    function Can_Get_Type_1_Info (
       Obj   : Object_Type;
-      Prim  : Primitive.Object_Type;
-      Infos : Address_Type)
-   return Boolean;
-
-   --
-   --  Can_Get_Type_1_Info_SPARK
-   --
-   function Can_Get_Type_1_Info_SPARK (
-      Obj   : Object_Type;
       Prim  : Primitive.Object_Type)
    return Boolean;
 
