@@ -37,6 +37,7 @@ is
 
    type Byte_Type is range 0 .. 255 with Size => 8;
 
+   Superblock_Nr_Of_Snapshots : constant := 48;
    Block_Size : constant := 4096;
 
    type Block_Data_Type
@@ -196,10 +197,11 @@ is
    return Boolean
    is ((Snap.Flags and Snapshot_Flags_Keep_Mask) /= 0);
 
-   type Snapshots_Index_Type is range 0 .. 47;
+   type Snapshots_Index_Type is range 0 .. Superblock_Nr_Of_Snapshots - 1;
    type Snapshots_Index_Storage_Type is range 0 .. 2**32 - 1 with Size => 32;
    type Snapshots_Type
-   is array (Snapshots_Index_Type) of Snapshot_Type with Size => 48 * 72 * 8;
+   is array (Snapshots_Index_Type) of Snapshot_Type
+   with Size => Superblock_Nr_Of_Snapshots * 72 * 8;
 
    type Type_1_Node_Infos_Type
    is array (0 .. Natural (Tree_Level_Index_Type'Last))
@@ -304,18 +306,18 @@ is
       Free_Leafs              : Tree_Number_Of_Leafs_Type;
       Padding                 : Superblock_Padding_Type;
    end record with Size =>
-       2 * 68 * 8 + --  Keys
-      48 * 72 * 8 + --  Snapshots
-            8 * 8 + --  Last_Secured_Generation
-            4 * 8 + --  Curr_Snap
-            4 * 8 + --  Degree
-            8 * 8 + --  Free_Gen
-            8 * 8 + --  Free_Number
-           32 * 8 + --  Free_Hash
-            4 * 8 + --  Free_Height
-            4 * 8 + --  Free_Degree
-            8 * 8 + --  Free_Leafs
-          424 * 8;  --  Padding
+                               2 * 68 * 8 + --  Keys
+      Superblock_Nr_Of_Snapshots * 72 * 8 + --  Snapshots
+                                    8 * 8 + --  Last_Secured_Generation
+                                    4 * 8 + --  Curr_Snap
+                                    4 * 8 + --  Degree
+                                    8 * 8 + --  Free_Gen
+                                    8 * 8 + --  Free_Number
+                                   32 * 8 + --  Free_Hash
+                                    4 * 8 + --  Free_Height
+                                    4 * 8 + --  Free_Degree
+                                    8 * 8 + --  Free_Leafs
+                                  424 * 8;  --  Padding
 
    pragma Assert (Superblock_Type'Size = Block_Data_Type'Size);
 
