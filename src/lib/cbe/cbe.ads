@@ -48,7 +48,6 @@ is
    type Number_Of_Primitives_Type    is mod 2**64;
    type Index_Type                   is mod 2**64;
    type Generation_Type              is mod 2**64;
-   type Superblock_Index_Type        is mod 2**64;
    type Block_Number_Type            is mod 2**64;
    type Physical_Block_Address_Type  is mod 2**64;
    type Virtual_Block_Address_Type   is mod 2**64;
@@ -62,7 +61,8 @@ is
    type Tree_Child_Index_Type        is mod 2**32;
    type Tag_Type                     is mod 2**32;
    type Number_Of_Blocks_Type        is mod 2**32;
-   type Snapshot_ID_Type             is mod 2**32;
+   type Snapshot_ID_Type             is range 0 .. 2**32 - 1;
+   type Snapshot_ID_Storage_Type     is range 0 .. 2**32 - 1 with Size => 32;
    type Snapshot_Valid_Storage_Type  is range 0 .. 2**8 - 1 with Size => 8;
    type Snapshot_Flags_Type          is mod 2**32;
    type Key_ID_Type                  is range 0 .. 2**32 - 1;
@@ -143,7 +143,7 @@ is
       Nr_Of_Leafs : Tree_Number_Of_Leafs_Type;
       Height      : Tree_Level_Type;
       Valid       : Snapshot_Valid_Storage_Type;
-      ID          : Snapshot_ID_Type;
+      ID          : Snapshot_ID_Storage_Type;
       Flags       : Snapshot_Flags_Type;
    end record;
 
@@ -197,6 +197,7 @@ is
    is ((Snap.Flags and Snapshot_Flags_Keep_Mask) /= 0);
 
    type Snapshots_Index_Type is range 0 .. 47;
+   type Snapshots_Index_Storage_Type is range 0 .. 2**32 - 1 with Size => 32;
    type Snapshots_Type
    is array (Snapshots_Index_Type) of Snapshot_Type with Size => 48 * 72 * 8;
 
@@ -220,9 +221,6 @@ is
 
    function Tree_Level_Invalid return Tree_Level_Type
    is (Tree_Level_Type'Last);
-
-   function Superblock_Index_Invalid return Superblock_Index_Type
-   is (Superblock_Index_Type'Last);
 
    --
    --  Tag meanings
@@ -296,7 +294,7 @@ is
       Keys                    : Keys_Type;
       Snapshots               : Snapshots_Type;
       Last_Secured_Generation : Generation_Type;
-      Snapshot_ID             : Snapshot_ID_Type;
+      Curr_Snap               : Snapshots_Index_Storage_Type;
       Degree                  : Tree_Degree_Type;
       Free_Gen                : Generation_Type;
       Free_Number             : Physical_Block_Address_Type;
@@ -309,7 +307,7 @@ is
        2 * 68 * 8 + --  Keys
       48 * 72 * 8 + --  Snapshots
             8 * 8 + --  Last_Secured_Generation
-            4 * 8 + --  Snapshot_ID
+            4 * 8 + --  Curr_Snap
             4 * 8 + --  Degree
             8 * 8 + --  Free_Gen
             8 * 8 + --  Free_Number
