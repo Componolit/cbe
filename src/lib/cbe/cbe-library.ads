@@ -110,8 +110,9 @@ is
    --             needs data, otherwise an invalid one is returned
    --
    procedure IO_Data_Required (
-      Obj : in out Object_Type;
-      Req :    out Request.Object_Type);
+      Obj      : in out Object_Type;
+      Req      :    out Request.Object_Type;
+      Data_Idx :    out Block_IO.Data_Index_Type);
 
    --
    --  Mark read request for backend block session
@@ -119,10 +120,9 @@ is
    --  \param Req       reference to the request from the CBE
    --  \param Progress  return true if the CBE could process the request
    --
-   procedure IO_Data_Read_In_Progress (
+   procedure IO_Data_Gets_Read (
       Obj      : in out Object_Type;
-      Req      :        Request.Object_Type;
-      Progress :    out Boolean);
+      Data_Idx :        Block_IO.Data_Index_Type);
 
    --
    --  Submit read request data from the backend block session to the CBE
@@ -134,11 +134,9 @@ is
    --  \param Progress  return true if the CBE acknowledged the request
    --
    procedure Supply_IO_Data (
-      Obj      : in out Object_Type;
-      Req      :        Request.Object_Type;
-      IO_Buf   : in out Block_IO.Data_Type;
-      Data     :        Block_Data_Type;
-      Progress :    out Boolean);
+      Obj        : in out Object_Type;
+      Data_Index :        Block_IO.Data_Index_Type;
+      Success    :        Boolean);
 
    --
    --  Return write request for the backend block session
@@ -147,8 +145,9 @@ is
    --             needs data, otherwise an invalid one is returned
    --
    procedure Has_IO_Data_To_Write (
-      Obj : in out Object_Type;
-      Req :    out Request.Object_Type);
+      Obj      : in out Object_Type;
+      Req      :    out Request.Object_Type;
+      Data_Idx :    out Block_IO.Data_Index_Type);
 
    --
    --  Obtain data for write request for the backend block session
@@ -159,17 +158,14 @@ is
    --  \param Data      reference to the data associated with the request
    --  \param Progress  return true if the CBE could process the request
    --
-   procedure Obtain_IO_Data (
+   procedure IO_Data_Gets_Written (
       Obj      : in out Object_Type;
-      Req      :        Request.Object_Type;
-      IO_Buf   :        Block_IO.Data_Type;
-      Data     :    out Block_Data_Type;
-      Progress :    out Boolean);
+      Data_Idx :        Block_IO.Data_Index_Type);
 
    procedure Ack_IO_Data_To_Write (
-      Obj      : in out Object_Type;
-      Req      :        Request.Object_Type;
-      Progress :    out Boolean);
+      Obj        : in out Object_Type;
+      Data_Index :        Block_IO.Data_Index_Type;
+      Success    :        Boolean);
 
    --
    --  Return a client request that provides data to the frontend block data

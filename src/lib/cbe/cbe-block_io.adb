@@ -178,6 +178,17 @@ is
       end loop;
    end Drop_Generated_Primitive;
 
+   procedure Drop_Generated_Primitive_2 (
+      Obj      : in out Object_Type;
+      Data_Idx :        Data_Index_Type)
+   is
+   begin
+      if Obj.Entries (Data_Idx).State /= Pending then
+         raise Program_Error;
+      end if;
+      Obj.Entries (Data_Idx).State := In_Progress;
+   end Drop_Generated_Primitive_2;
+
    procedure Mark_Generated_Primitive_Complete (
       Obj  : in out Object_Type;
       Prim :        Primitive.Object_Type)
@@ -197,5 +208,18 @@ is
       --  XXX precondition
       raise Program_Error;
    end Mark_Generated_Primitive_Complete;
+
+   procedure Mark_Generated_Primitive_Complete_2 (
+      Obj      : in out Object_Type;
+      Data_Idx :        Data_Index_Type;
+      Success  :        Boolean)
+   is
+   begin
+      if Obj.Entries (Data_Idx).State /= In_Progress then
+         raise Program_Error;
+      end if;
+      Primitive.Success (Obj.Entries (Data_Idx).Prim, Success);
+      Obj.Entries (Data_Idx).State := Complete;
+   end Mark_Generated_Primitive_Complete_2;
 
 end CBE.Block_IO;

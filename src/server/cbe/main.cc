@@ -451,27 +451,32 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 				 */
 				while (_block.tx()->ready_to_submit()) {
 
-					Cbe::Request const request = _cbe->io_data_required();
+					Io_buffer::Index data_index { 0 };
+					Cbe::Request request = _cbe->io_data_required(data_index);
+
 					log("\033[36m INF ", "io_data_required: ", request);
-
-					if (!request.valid())         { break; }
-					if (_backend_request.valid()) { break; }
-
+					if (!request.valid()) {
+						break;
+					}
+					if (_backend_request.valid()) {
+						break;
+					}
 					try {
+						request.tag = data_index.value;
 						Block::Packet_descriptor packet {
 							_block.alloc_packet(Cbe::BLOCK_SIZE),
-							request.read() ? Block::Packet_descriptor::READ
-							               : Block::Packet_descriptor::WRITE,
+							Block::Packet_descriptor::READ,
 							request.block_number,
 							request.count,
 						};
 
-						progress |= _cbe->io_data_read_in_progress(request);
-						log("\033[36m INF ", "io_data_read_in_progress: ", request);
-
 						_block.tx()->try_submit_packet(packet);
-
 						_backend_request = request;
+
+						log("\033[36m INF ", "io_data_read_in_progress: ", request);
+						_cbe->io_data_gets_read(data_index);
+
+						progress |= true;
 						io_progress |= true;
 					}
 					catch (Block::Session::Tx::Source::Packet_alloc_failed) { break; }
@@ -479,30 +484,37 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 
 				while (_block.tx()->ready_to_submit()) {
 
-					Cbe::Request const request = _cbe->has_io_data_to_write();
+					Io_buffer::Index data_index { 0 };
+					Cbe::Request request =
+						_cbe->has_io_data_to_write(data_index);
+
 					log("\033[36m INF ", "has_io_data_to_write: ", request);
-
-					if (!request.valid())         { break; }
-					if (_backend_request.valid()) { break; }
-
+					if (!request.valid()) {
+						break;
+					}
+					if (_backend_request.valid()) {
+						break;
+					}
 					try {
+						request.tag = data_index.value;
 						Block::Packet_descriptor packet {
 							_block.alloc_packet(Cbe::BLOCK_SIZE),
-							request.read() ? Block::Packet_descriptor::READ
-							               : Block::Packet_descriptor::WRITE,
+							Block::Packet_descriptor::WRITE,
 							request.block_number,
 							request.count,
 						};
-
-						// XXX release packet in case of return false
 						Cbe::Block_data &data =
-							*reinterpret_cast<Cbe::Block_data*>(_block.tx()->packet_content(packet));
-						progress |= _cbe->obtain_io_data(request, _io_buf, data);
-						log("\033[36m INF ", "obtain_io_data: ", request);
+							*reinterpret_cast<Cbe::Block_data*>(
+								_block.tx()->packet_content(packet));
+						data = _io_buf.item(data_index);
 
 						_block.tx()->try_submit_packet(packet);
-
 						_backend_request = request;
+
+						log("\033[36m INF ", "io_data_gets_written: ", request);
+						_cbe->io_data_gets_written(data_index);
+
+						progress |= true;
 						io_progress |= true;
 					}
 					catch (Block::Session::Tx::Source::Packet_alloc_failed) { break; }
@@ -525,15 +537,24 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 						packet.succeeded() ? Cbe::Request::Success::TRUE
 						                   : Cbe::Request::Success::FALSE;
 
+					Io_buffer::Index const data_index { _backend_request.tag };
+					bool             const success    { _backend_request.success == Request::Success::TRUE };
 					if (read) {
-						Cbe::Block_data &data =
-							*reinterpret_cast<Cbe::Block_data*>(_block.tx()->packet_content(packet));
-						progress |= _cbe->supply_io_data(_backend_request, _io_buf, data);
+						if (success) {
+							Cbe::Block_data &data =
+								*reinterpret_cast<Cbe::Block_data*>(
+									_block.tx()->packet_content(packet));
+							_io_buf.item(data_index) = data;
+						}
+
+						_cbe->supply_io_data(data_index, success);
+						progress |= true;
 						log("\033[36m INF ", "supply_io_data: ", _backend_request);
 					} else
 
 					if (write) {
-						progress |= _cbe->ack_io_data_to_write(_backend_request);
+						_cbe->ack_io_data_to_write(data_index, success);
+						progress |= true;
 						log("\033[36m INF ", "ack_io_data_to_write: ", _backend_request);
 					}
 

@@ -98,75 +98,71 @@ is
    end Drop_Completed_Request;
 
    procedure IO_Data_Required (
-      Obj : in out Library.Object_Type;
-      Req :    out CXX_Request_Type)
+      Obj        : in out Library.Object_Type;
+      Req        :    out CXX_Request_Type;
+      Data_Index :    out CXX_IO_Buffer_Index_Type)
    is
-      SPARK_Req : Request.Object_Type;
+      SPARK_Req        : Request.Object_Type;
+      SPARK_Data_Index : Block_IO.Data_Index_Type;
    begin
-      Library.IO_Data_Required (Obj, SPARK_Req);
-      Req := CXX_Request_From_SPARK (SPARK_Req);
+      Library.IO_Data_Required (Obj, SPARK_Req, SPARK_Data_Index);
+      Req        := CXX_Request_From_SPARK (SPARK_Req);
+      Data_Index := (Value => CXX_UInt32_Type (SPARK_Data_Index));
    end IO_Data_Required;
 
-   procedure IO_Data_Read_In_Progress (
-      Obj      : in out Library.Object_Type;
-      Req      :        CXX_Request_Type;
-      Progress :    out CXX_Bool_Type)
+   procedure IO_Data_Gets_Read (
+      Obj        : in out Library.Object_Type;
+      Data_Index :        CXX_IO_Buffer_Index_Type)
    is
-      SPARK_Progress : Boolean;
    begin
-      Library.IO_Data_Read_In_Progress (
-         Obj, CXX_Request_To_SPARK (Req), SPARK_Progress);
-      Progress := CXX_Bool_From_SPARK (SPARK_Progress);
-   end IO_Data_Read_In_Progress;
+      Library.IO_Data_Gets_Read (
+         Obj, Block_IO.Data_Index_Type (Data_Index.Value));
+   end IO_Data_Gets_Read;
 
    procedure Supply_IO_Data (
-      Obj      : in out Library.Object_Type;
-      Req      :        CXX_Request_Type;
-      IO_Buf   : in out Block_IO.Data_Type;
-      Data     :        Block_Data_Type;
-      Progress :    out CXX_Bool_Type)
+      Obj        : in out Library.Object_Type;
+      Data_Index :        CXX_Crypto_Cipher_Buffer_Index_Type;
+      Success    :        CXX_Bool_Type)
    is
-      SPARK_Progress : Boolean;
    begin
       Library.Supply_IO_Data (
-         Obj, CXX_Request_To_SPARK (Req), IO_Buf, Data, SPARK_Progress);
-      Progress := CXX_Bool_From_SPARK (SPARK_Progress);
+         Obj, Block_IO.Data_Index_Type (Data_Index.Value),
+         CXX_Bool_To_SPARK (Success));
+
    end Supply_IO_Data;
 
    procedure Has_IO_Data_To_Write (
-      Obj : in out Library.Object_Type;
-      Req :    out CXX_Request_Type)
+      Obj        : in out Library.Object_Type;
+      Req        :    out CXX_Request_Type;
+      Data_Index :    out CXX_IO_Buffer_Index_Type)
    is
-      SPARK_Req : Request.Object_Type;
+      SPARK_Req        : Request.Object_Type;
+      SPARK_Data_Index : Block_IO.Data_Index_Type;
    begin
-      Library.Has_IO_Data_To_Write (Obj, SPARK_Req);
-      Req := CXX_Request_From_SPARK (SPARK_Req);
+      Library.Has_IO_Data_To_Write (Obj, SPARK_Req, SPARK_Data_Index);
+      Req        := CXX_Request_From_SPARK (SPARK_Req);
+      Data_Index := (Value => CXX_UInt32_Type (SPARK_Data_Index));
    end Has_IO_Data_To_Write;
 
-   procedure Obtain_IO_Data (
-      Obj      : in out Library.Object_Type;
-      Req      :        CXX_Request_Type;
-      IO_Buf   :        Block_IO.Data_Type;
-      Data     :    out Block_Data_Type;
-      Progress :    out CXX_Bool_Type)
+   procedure IO_Data_Gets_Written (
+      Obj        : in out Library.Object_Type;
+      Data_Index :        CXX_IO_Buffer_Index_Type)
    is
-      SPARK_Progress : Boolean;
    begin
-      Library.Obtain_IO_Data (
-         Obj, CXX_Request_To_SPARK (Req), IO_Buf, Data, SPARK_Progress);
-      Progress := CXX_Bool_From_SPARK (SPARK_Progress);
-   end Obtain_IO_Data;
+      Library.IO_Data_Gets_Written (
+         Obj, Block_IO.Data_Index_Type (Data_Index.Value));
+   end IO_Data_Gets_Written;
 
    procedure Ack_IO_Data_To_Write (
-      Obj      : in out Library.Object_Type;
-      Req      :        CXX_Request_Type;
-      Progress :    out CXX_Bool_Type)
+      Obj        : in out Library.Object_Type;
+      Data_Index :        CXX_Crypto_Cipher_Buffer_Index_Type;
+      Success    :        CXX_Bool_Type)
    is
-      SPARK_Progress : Boolean;
    begin
       Library.Ack_IO_Data_To_Write (
-         Obj, CXX_Request_To_SPARK (Req), SPARK_Progress);
-      Progress := CXX_Bool_From_SPARK (SPARK_Progress);
+         Obj, Block_IO.Data_Index_Type (Data_Index.Value),
+         CXX_Bool_To_SPARK (Success));
+
    end Ack_IO_Data_To_Write;
 
    procedure Client_Data_Ready (

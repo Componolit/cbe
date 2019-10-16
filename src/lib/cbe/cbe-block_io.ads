@@ -150,6 +150,18 @@ is
       Prim :        Primitive.Object_Type);
 
    --
+   --  Discard given generated primitive
+   --
+   --  This method must only be called after 'peek_generated_io_primitive'
+   --  returned a valid primitive.
+   --
+   --  \param Prim  reference to primitive
+   --
+   procedure Drop_Generated_Primitive_2 (
+      Obj      : in out Object_Type;
+      Data_Idx :        Data_Index_Type);
+
+   --
    --  Mark given generated primitive as complete
    --
    --  \param p  reference to primitive
@@ -157,6 +169,11 @@ is
    procedure Mark_Generated_Primitive_Complete (
       Obj  : in out Object_Type;
       Prim :        Primitive.Object_Type);
+
+   procedure Mark_Generated_Primitive_Complete_2 (
+      Obj      : in out Object_Type;
+      Data_Idx :        Data_Index_Type;
+      Success  :        Boolean);
 
 private
 

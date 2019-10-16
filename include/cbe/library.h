@@ -41,12 +41,8 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 		 * procedures that return the 'progress' result as last out parameter.
 		 */
 
-		void _io_data_required(Request &);
-		void _io_data_read_in_progress(Request const &, bool &);
-		void _supply_io_data(Request const &, Io_buffer &, Block_data const &, bool &);
-		void _has_io_data_to_write(Request &);
-		void _obtain_io_data(Request const &, Io_buffer const &, Block_data &, bool &);
-		void _ack_io_data_to_write(Request const &, bool &);
+		void _io_data_required(Request &, Io_buffer::Index &);
+		void _has_io_data_to_write(Request &, Io_buffer::Index &);
 
 		void _client_data_ready(Request &);
 		void _obtain_client_data(Request const &, Crypto_plain_buffer::Index &, bool &);
@@ -147,10 +143,10 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 	 * \param result  valid request in case the is one pending that
 	 *                needs data, otherwise an invalid one is returned
 	 */
-	Request io_data_required()
+	Request io_data_required(Io_buffer::Index &data_index)
 	{
 		Request result { };
-		_io_data_required(result);
+		_io_data_required(result, data_index);
 		return result;
 	}
 
@@ -160,12 +156,7 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 	 * \param  request  reference to the request from the CBE
 	 * \return  true if the CBE could process the request
 	 */
-	bool io_data_read_in_progress(Request const &request)
-	{
-		bool result = false;
-		_io_data_read_in_progress(request, result);
-		return result;
-	}
+	void io_data_gets_read(Io_buffer::Index const &data_index);
 
 	/**
 	 * Submit read request data from the backend block session to the CBE
@@ -178,14 +169,8 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 	 *
 	 * \return  true if the CBE acknowledged the request
 	 */
-	bool supply_io_data(Request    const &request,
-	                    Io_buffer        &io_buf,
-	                    Block_data const &data)
-	{
-		bool result = false;
-		_supply_io_data(request, io_buf, data, result);
-		return result;
-	}
+	void supply_io_data(Io_buffer::Index const &data_index,
+	                    bool             const  success);
 
 	/**
 	 * Return a write request for the backend block session
@@ -193,10 +178,10 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 	 * \param result  valid request in case the is one pending that
 	 *                needs data, otherwise an invalid one is returned
 	 */
-	Request has_io_data_to_write()
+	Request has_io_data_to_write(Io_buffer::Index &data_index)
 	{
 		Request result { };
-		_has_io_data_to_write(result);
+		_has_io_data_to_write(result, data_index);
 		return result;
 	}
 
@@ -212,14 +197,7 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 	 *
 	 * \return  true if the CBE could process the request
 	 */
-	bool obtain_io_data(Request    const &request,
-	                    Io_buffer  const &io_buf,
-	                    Block_data       &data)
-	{
-		bool result = false;
-		_obtain_io_data(request, io_buf, data, result);
-		return result;
-	}
+	void io_data_gets_written(Io_buffer::Index const &data_index);
 
 	/**
 	 * Acknowledge data for write request for the backend block session
@@ -231,12 +209,8 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 	 *
 	 * \return  true if the CBE could process the request
 	 */
-	bool ack_io_data_to_write(Request const &request)
-	{
-		bool result = false;
-		_ack_io_data_to_write(request, result);
-		return result;
-	}
+	void ack_io_data_to_write(Io_buffer::Index const &data_index,
+	                          bool             const  success);
 
 	/*
 	 * Frontend block I/O
