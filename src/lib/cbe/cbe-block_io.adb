@@ -35,35 +35,30 @@ is
    is (Obj.Used_Entries < Num_Entries_Type'Last);
 
    procedure Submit_Primitive (
-      Obj     : in out Object_Type;
-      Tag     :        Tag_Type;
-      Prim    :        Primitive.Object_Type;
-      IO_Data : in out Data_Type;
-      Data    : in     Block_Data_Type)
+      Obj        : in out Object_Type;
+      Tag        :        Tag_Type;
+      Prim       :        Primitive.Object_Type;
+      Data_Index :    out Data_Index_Type)
    is
    begin
-      for I in Obj.Entries'Range loop
-
-         if Obj.Entries (I).State = Unused then
-
-            Obj.Entries (I) := (
+      for Idx in Obj.Entries'Range loop
+         if Obj.Entries (Idx).State = Unused then
+            Obj.Entries (Idx) := (
                Orig_Tag => Primitive.Tag (Prim),
                Prim     => Primitive.Valid_Object (
-                  Op     => Primitive.Operation (Prim),
-                  Succ   => Primitive.Success (Prim),
-                  Tg     => Tag,
-                  Blk_Nr => Primitive.Block_Number (Prim),
-                  Idx    => Primitive.Index (Prim)),
+               Op       => Primitive.Operation (Prim),
+               Succ     => Primitive.Success (Prim),
+               Tg       => Tag,
+               Blk_Nr   => Primitive.Block_Number (Prim),
+               Idx      => Primitive.Index (Prim)),
                State    => Pending);
 
-            if Primitive.Operation (Prim) = Write then
-               IO_Data (I) := Data;
-            end if;
-
+            Data_Index       := Idx;
             Obj.Used_Entries := Obj.Used_Entries + 1;
             return;
          end if;
       end loop;
+      raise Program_Error;
    end Submit_Primitive;
 
    function Peek_Completed_Primitive (Obj : Object_Type)

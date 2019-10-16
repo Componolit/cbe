@@ -57,11 +57,10 @@ is
    --  \param Data  reference to a Block_data object
    --
    procedure Submit_Primitive (
-      Obj     : in out Object_Type;
-      Tag     :        CBE.Tag_Type;
-      Prim    :        Primitive.Object_Type;
-      IO_Data : in out Data_Type;
-      Data    : in     Block_Data_Type);
+      Obj        : in out Object_Type;
+      Tag        :        CBE.Tag_Type;
+      Prim       :        Primitive.Object_Type;
+      Data_Index :    out Data_Index_Type);
 
    --
    --  Peek_Completed_Primitive

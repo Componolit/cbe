@@ -360,6 +360,7 @@ is
                Index : constant Index_Type :=
                   Free_Tree.Peek_Generated_Data_Index (
                      Obj.Free_Tree_Obj, Prim);
+               Data_Idx : Block_IO.Data_Index_Type;
             begin
                if Primitive.Tag (Prim) = Tag_Write_Back then
                   --
@@ -375,14 +376,21 @@ is
                   --  solution.)
                   --
                   Block_IO.Submit_Primitive (
-                     Obj.IO_Obj, Tag_Free_Tree_WB, Prim, IO_Buf,
-                     Obj.Cache_Data (Cache.Cache_Index_Type (Index)));
+                     Obj.IO_Obj, Tag_Free_Tree_WB, Prim, Data_Idx);
+
+                  if Primitive.Operation (Prim) = Write then
+                     IO_Buf (Data_Idx) :=
+                        Obj.Cache_Data (Cache.Cache_Index_Type (Index));
+                  end if;
 
                elsif Primitive.Tag (Prim) = Tag_IO then
                   Block_IO.Submit_Primitive (
-                     Obj.IO_Obj, Tag_Free_Tree_IO, Prim, IO_Buf,
-                     Obj.Free_Tree_Query_Data (Natural (Index)));
+                     Obj.IO_Obj, Tag_Free_Tree_IO, Prim, Data_Idx);
 
+                  if Primitive.Operation (Prim) = Write then
+                     IO_Buf (Data_Idx) :=
+                        Obj.Free_Tree_Query_Data (Natural (Index));
+                  end if;
                end if;
             end Declare_Index_1;
             Free_Tree.Drop_Generated_Primitive (Obj.Free_Tree_Obj, Prim);
@@ -538,16 +546,21 @@ is
             Prim : constant Primitive.Object_Type :=
                Cache_Flusher.Peek_Generated_Primitive (
                   Obj.Cache_Flusher_Obj);
+
+            Data_Idx : Block_IO.Data_Index_Type;
          begin
             exit Loop_Cache_Flusher_Generated_Prims when
                not Primitive.Valid (Prim) or else
                not Block_IO.Primitive_Acceptable (Obj.IO_Obj);
 
             Block_IO.Submit_Primitive (
-               Obj.IO_Obj, Tag_Cache_Flush, Prim, IO_Buf,
-               Obj.Cache_Data (
-                  Cache_Flusher.Peek_Generated_Data_Index (
-                     Obj.Cache_Flusher_Obj, Prim)));
+               Obj.IO_Obj, Tag_Cache_Flush, Prim, Data_Idx);
+
+            if Primitive.Operation (Prim) = Write then
+               IO_Buf (Data_Idx) :=
+                  Obj.Cache_Data (Cache_Flusher.Peek_Generated_Data_Index (
+                     Obj.Cache_Flusher_Obj, Prim));
+            end if;
 
             Cache_Flusher.Drop_Generated_Primitive (
                Obj.Cache_Flusher_Obj, Prim);
@@ -764,16 +777,21 @@ is
          declare
             Prim : constant Primitive.Object_Type :=
                Write_Back.Peek_Generated_IO_Primitive (Obj.Write_Back_Obj);
+
+            Data_Idx : Block_IO.Data_Index_Type;
          begin
             exit Loop_WB_Generated_IO_Prims when
                not Primitive.Valid (Prim) or else
                not Block_IO.Primitive_Acceptable (Obj.IO_Obj);
 
             Block_IO.Submit_Primitive (
-               Obj.IO_Obj, Tag_Write_Back, Prim, IO_Buf,
-               Obj.Write_Back_Data (
-                  Write_Back.Peek_Generated_IO_Data (
-                     Obj.Write_Back_Obj, Prim)));
+               Obj.IO_Obj, Tag_Write_Back, Prim, Data_Idx);
+
+            if Primitive.Operation (Prim) = Write then
+               IO_Buf (Data_Idx) :=
+                  Obj.Write_Back_Data (Write_Back.Peek_Generated_IO_Data (
+                     Obj.Write_Back_Obj, Prim));
+            end if;
 
             Write_Back.Drop_Generated_IO_Primitive (
                Obj.Write_Back_Obj, Prim);
@@ -965,10 +983,15 @@ is
 
                SB_Data : Block_Data_Type with
                   Address => Obj.Superblocks (SB_Index)'Address;
+
+               Data_Idx : Block_IO.Data_Index_Type;
             begin
                Block_IO.Submit_Primitive (
-                  Obj.IO_Obj, Tag_Sync_SB, Prim, IO_Buf, SB_Data);
+                  Obj.IO_Obj, Tag_Sync_SB, Prim, Data_Idx);
 
+               if Primitive.Operation (Prim) = Write then
+                  IO_Buf (Data_Idx) := SB_Data;
+               end if;
             end Declare_SB_Data;
             Sync_Superblock.Drop_Generated_Primitive (
                Obj.Sync_SB_Obj, Prim);
@@ -1067,16 +1090,20 @@ is
          declare
             Prim : constant Primitive.Object_Type :=
                Cache.Peek_Generated_Primitive (Obj.Cache_Obj);
+
+            Data_Idx : Block_IO.Data_Index_Type;
          begin
             exit Loop_Cache_Generated_Prims when
                not Primitive.Valid (Prim) or else
                not Block_IO.Primitive_Acceptable (Obj.IO_Obj);
 
-            Block_IO.Submit_Primitive (
-               Obj.IO_Obj, Tag_Cache, Prim, IO_Buf,
-               Obj.Cache_Job_Data (
+            Block_IO.Submit_Primitive (Obj.IO_Obj, Tag_Cache, Prim, Data_Idx);
+
+            if Primitive.Operation (Prim) = Write then
+               IO_Buf (Data_Idx) := Obj.Cache_Job_Data (
                   Cache.Cache_Job_Index_Type (
-                     Cache.Peek_Generated_Data_Index (Obj.Cache_Obj, Prim))));
+                     Cache.Peek_Generated_Data_Index (Obj.Cache_Obj, Prim)));
+            end if;
 
             Cache.Drop_Generated_Primitive (Obj.Cache_Obj, Prim);
 
@@ -1558,9 +1585,14 @@ is
             declare
                --  cast Crypto.Plain_Data_Type to Block_Data_Type
                Block_Data : Block_Data_Type with Address => Data'Address;
+               Data_Idx   : Block_IO.Data_Index_Type;
             begin
                Block_IO.Submit_Primitive (
-                  Obj.IO_Obj, Tag_Decrypt, Prim, IO_Buf, Block_Data);
+                  Obj.IO_Obj, Tag_Decrypt, Prim, Data_Idx);
+
+               if Primitive.Operation (Prim) = Write then
+                  IO_Buf (Data_Idx) := Block_Data;
+               end if;
             end;
 
             Virtual_Block_Device.Drop_Completed_Primitive (Obj.VBD);
