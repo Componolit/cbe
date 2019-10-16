@@ -136,6 +136,7 @@ is
    procedure Supply_IO_Data (
       Obj      : in out Object_Type;
       Req      :        Request.Object_Type;
+      IO_Buf   : in out Block_IO.Data_Type;
       Data     :        Block_Data_Type;
       Progress :    out Boolean);
 
@@ -161,6 +162,7 @@ is
    procedure Obtain_IO_Data (
       Obj      : in out Object_Type;
       Req      :        Request.Object_Type;
+      IO_Buf   :        Block_IO.Data_Type;
       Data     :    out Block_Data_Type;
       Progress :    out Boolean);
 
@@ -203,10 +205,11 @@ is
       Data_Index_Valid :    out Boolean);
 
    procedure Obtain_Client_Data_2 (
-      Obj              : in out Object_Type;
-      Req              :        Request.Object_Type;
-      Data             :    out Crypto.Plain_Data_Type;
-      Progress         :    out Boolean);
+      Obj      : in out Object_Type;
+      Req      :        Request.Object_Type;
+      IO_Buf   : in out Block_IO.Data_Type;
+      Data     :    out Crypto.Plain_Data_Type;
+      Progress :    out Boolean);
 
    --
    --  Return a client request that provides data to the frontend block data
@@ -316,6 +319,7 @@ is
    --
    procedure Execute (
       Obj               : in out Object_Type;
+      IO_Buf            : in out Block_IO.Data_Type;
       Crypto_Plain_Buf  : in out Crypto.Plain_Buffer_Type;
       Crypto_Cipher_Buf : in out Crypto.Cipher_Buffer_Type;
       Now               :        Timestamp_Type);
@@ -365,7 +369,6 @@ private
       Splitter_Obj            : Splitter.Object_Type;
       Crypto_Obj              : Crypto.Object_Type;
       IO_Obj                  : Block_IO.Object_Type;
-      IO_Data                 : Block_IO.Data_Type;
       Cache_Obj               : Cache.Object_Type;
       Cache_Data              : Cache.Cache_Data_Type;
       Cache_Job_Data          : Cache.Cache_Job_Data_Type;

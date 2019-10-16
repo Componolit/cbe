@@ -112,7 +112,6 @@ is
       Obj.Crypto_Obj              := Crypto.Initialized_Object;
 
       Obj.IO_Obj                  := Block_IO.Initialized_Object;
-      Obj.IO_Data                 := (others => (others => 0));
       Obj.Cache_Obj               := Cache.Initialized_Object;
       Obj.Cache_Data              := (others => (others => 0));
       Obj.Cache_Job_Data          := (others => (others => 0));
@@ -219,6 +218,7 @@ is
 
    procedure Execute (
       Obj               : in out Object_Type;
+      IO_Buf            : in out Block_IO.Data_Type;
       Crypto_Plain_Buf  : in out Crypto.Plain_Buffer_Type;
       Crypto_Cipher_Buf : in out Crypto.Cipher_Buffer_Type;
       Now               :        Timestamp_Type)
@@ -375,12 +375,12 @@ is
                   --  solution.)
                   --
                   Block_IO.Submit_Primitive (
-                     Obj.IO_Obj, Tag_Free_Tree_WB, Prim, Obj.IO_Data,
+                     Obj.IO_Obj, Tag_Free_Tree_WB, Prim, IO_Buf,
                      Obj.Cache_Data (Cache.Cache_Index_Type (Index)));
 
                elsif Primitive.Tag (Prim) = Tag_IO then
                   Block_IO.Submit_Primitive (
-                     Obj.IO_Obj, Tag_Free_Tree_IO, Prim, Obj.IO_Data,
+                     Obj.IO_Obj, Tag_Free_Tree_IO, Prim, IO_Buf,
                      Obj.Free_Tree_Query_Data (Natural (Index)));
 
                end if;
@@ -544,7 +544,7 @@ is
                not Block_IO.Primitive_Acceptable (Obj.IO_Obj);
 
             Block_IO.Submit_Primitive (
-               Obj.IO_Obj, Tag_Cache_Flush, Prim, Obj.IO_Data,
+               Obj.IO_Obj, Tag_Cache_Flush, Prim, IO_Buf,
                Obj.Cache_Data (
                   Cache_Flusher.Peek_Generated_Data_Index (
                      Obj.Cache_Flusher_Obj, Prim)));
@@ -770,7 +770,7 @@ is
                not Block_IO.Primitive_Acceptable (Obj.IO_Obj);
 
             Block_IO.Submit_Primitive (
-               Obj.IO_Obj, Tag_Write_Back, Prim, Obj.IO_Data,
+               Obj.IO_Obj, Tag_Write_Back, Prim, IO_Buf,
                Obj.Write_Back_Data (
                   Write_Back.Peek_Generated_IO_Data (
                      Obj.Write_Back_Obj, Prim)));
@@ -967,8 +967,7 @@ is
                   Address => Obj.Superblocks (SB_Index)'Address;
             begin
                Block_IO.Submit_Primitive (
-                  Obj.IO_Obj, Tag_Sync_SB, Prim, Obj.IO_Data,
-                  SB_Data);
+                  Obj.IO_Obj, Tag_Sync_SB, Prim, IO_Buf, SB_Data);
 
             end Declare_SB_Data;
             Sync_Superblock.Drop_Generated_Primitive (
@@ -1074,7 +1073,7 @@ is
                not Block_IO.Primitive_Acceptable (Obj.IO_Obj);
 
             Block_IO.Submit_Primitive (
-               Obj.IO_Obj, Tag_Cache, Prim, Obj.IO_Data,
+               Obj.IO_Obj, Tag_Cache, Prim, IO_Buf,
                Obj.Cache_Job_Data (
                   Cache.Cache_Job_Index_Type (
                      Cache.Peek_Generated_Data_Index (Obj.Cache_Obj, Prim))));
@@ -1130,7 +1129,7 @@ is
                      Declare_Data :
                      declare
                         Cipher_Data : Crypto.Cipher_Data_Type with Address =>
-                           Obj.IO_Data (Index)'Address;
+                           IO_Buf (Index)'Address;
 
                         Data_Idx : Crypto.Item_Index_Type;
                      begin
@@ -1160,7 +1159,7 @@ is
                   --        Cache job Data index, for now rely on the
                   --        knowledge that there is only one item
                   --
-                  Obj.Cache_Job_Data (0) := Obj.IO_Data (Index);
+                  Obj.Cache_Job_Data (0) := IO_Buf (Index);
                   Cache.Mark_Completed_Primitive (Obj.Cache_Obj, Prim);
 
                elsif Primitive.Tag (Prim) = Tag_Cache_Flush then
@@ -1188,7 +1187,7 @@ is
                   --       Data index, for now rely on the knowledge that there
                   --       is only one item
                   --
-                  Obj.Free_Tree_Query_Data (0) := Obj.IO_Data (Index);
+                  Obj.Free_Tree_Query_Data (0) := IO_Buf (Index);
                   Free_Tree.Mark_Generated_Primitive_Complete (
                      Obj.Free_Tree_Obj,
                      Primitive.Copy_Valid_Object_Change_Tag (
@@ -1320,6 +1319,7 @@ is
    procedure Supply_IO_Data (
       Obj      : in out Object_Type;
       Req      :        Request.Object_Type;
+      IO_Buf   : in out Block_IO.Data_Type;
       Data     :        Block_Data_Type;
       Progress :    out Boolean)
    is
@@ -1336,7 +1336,7 @@ is
       end if;
 
       if Request.Success (Req) then
-         Obj.IO_Data (Block_IO.Peek_Generated_Data_Index (Obj.IO_Obj, Prim)) :=
+         IO_Buf (Block_IO.Peek_Generated_Data_Index (Obj.IO_Obj, Prim)) :=
             Data;
       end if;
 
@@ -1389,6 +1389,7 @@ is
    procedure Obtain_IO_Data (
       Obj      : in out Object_Type;
       Req      :        Request.Object_Type;
+      IO_Buf   :        Block_IO.Data_Type;
       Data     :    out Block_Data_Type;
       Progress :    out Boolean)
    is
@@ -1404,11 +1405,8 @@ is
          return;
       end if;
 
-      Data :=
-         Obj.IO_Data (Block_IO.Peek_Generated_Data_Index (Obj.IO_Obj, Prim));
-
+      Data := IO_Buf (Block_IO.Peek_Generated_Data_Index (Obj.IO_Obj, Prim));
       Block_IO.Drop_Generated_Primitive (Obj.IO_Obj, Prim);
-
       Obj.Back_End_Req_Prim.In_Progress := True;
       Progress := True;
    end Obtain_IO_Data;
@@ -1531,10 +1529,11 @@ is
    end Obtain_Client_Data;
 
    procedure Obtain_Client_Data_2 (
-      Obj              : in out Object_Type;
-      Req              :        Request.Object_Type;
-      Data             :    out Crypto.Plain_Data_Type;
-      Progress         :    out Boolean)
+      Obj      : in out Object_Type;
+      Req      :        Request.Object_Type;
+      IO_Buf   : in out Block_IO.Data_Type;
+      Data     :    out Crypto.Plain_Data_Type;
+      Progress :    out Boolean)
    is
       Prim : constant Primitive.Object_Type := Obj.Front_End_Req_Prim.Prim;
       Tag  : constant Tag_Type              := Obj.Front_End_Req_Prim.Tag;
@@ -1561,11 +1560,7 @@ is
                Block_Data : Block_Data_Type with Address => Data'Address;
             begin
                Block_IO.Submit_Primitive (
-                  Obj     => Obj.IO_Obj,
-                  Tag     => Tag_Decrypt,
-                  Prim    => Prim,
-                  IO_Data => Obj.IO_Data,
-                  Data    => Block_Data);
+                  Obj.IO_Obj, Tag_Decrypt, Prim, IO_Buf, Block_Data);
             end;
 
             Virtual_Block_Device.Drop_Completed_Primitive (Obj.VBD);

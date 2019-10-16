@@ -187,6 +187,7 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 		Cbe::Time _time { _env };
 
 		Constructible<Cbe::Library> _cbe               { };
+		Io_buffer                   _io_buf            { };
 		Crypto_plain_buffer         _crypto_plain_buf  { };
 		Crypto_cipher_buffer        _crypto_cipher_buf { };
 		External::Crypto            _crypto            { };
@@ -345,7 +346,7 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 					}
 				}
 
-				_cbe->execute(_crypto_plain_buf, _crypto_cipher_buf, now);
+				_cbe->execute(_io_buf, _crypto_plain_buf, _crypto_cipher_buf, now);
 				progress |= _cbe->execute_progress();
 
 				/* if sealing has finished during 'execute', set new timeout */
@@ -405,7 +406,7 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 								progress |= true;
 								data = _crypto_plain_buf.item(data_index);
 							} else {
-								progress |= _cbe->obtain_client_data_2(cbe_request, data);
+								progress |= _cbe->obtain_client_data_2(cbe_request, _io_buf, data);
 							}
 							log("\033[36m INF ", "obtain_client_data: ", cbe_request);
 						});
@@ -496,7 +497,7 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 						// XXX release packet in case of return false
 						Cbe::Block_data &data =
 							*reinterpret_cast<Cbe::Block_data*>(_block.tx()->packet_content(packet));
-						progress |= _cbe->obtain_io_data(request, data);
+						progress |= _cbe->obtain_io_data(request, _io_buf, data);
 						log("\033[36m INF ", "obtain_io_data: ", request);
 
 						_block.tx()->try_submit_packet(packet);
@@ -527,7 +528,7 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 					if (read) {
 						Cbe::Block_data &data =
 							*reinterpret_cast<Cbe::Block_data*>(_block.tx()->packet_content(packet));
-						progress |= _cbe->supply_io_data(_backend_request, data);
+						progress |= _cbe->supply_io_data(_backend_request, _io_buf, data);
 						log("\033[36m INF ", "supply_io_data: ", _backend_request);
 					} else
 

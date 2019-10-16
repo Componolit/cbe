@@ -43,14 +43,14 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 
 		void _io_data_required(Request &);
 		void _io_data_read_in_progress(Request const &, bool &);
-		void _supply_io_data(Request const &, Block_data const &, bool &);
+		void _supply_io_data(Request const &, Io_buffer &, Block_data const &, bool &);
 		void _has_io_data_to_write(Request &);
-		void _obtain_io_data(Request const &, Block_data &, bool &);
+		void _obtain_io_data(Request const &, Io_buffer const &, Block_data &, bool &);
 		void _ack_io_data_to_write(Request const &, bool &);
 
 		void _client_data_ready(Request &);
 		void _obtain_client_data(Request const &, Crypto_plain_buffer::Index &, bool &);
-		void _obtain_client_data_2(Request const &, Block_data &, bool &);
+		void _obtain_client_data_2(Request const &, Io_buffer &, Block_data &, bool &);
 		void _client_data_required(Request &);
 		void _supply_client_data(Time::Timestamp const, Request const &, Block_data const &, bool &);
 
@@ -93,7 +93,8 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 	 * \param  show_if_progress  if true, generate LOG message only when progress was
 	 *                           acutally made
 	 */
-	void execute(Crypto_plain_buffer  &crypto_plain_buf,
+	void execute(Io_buffer            &io_buf,
+	             Crypto_plain_buffer  &crypto_plain_buf,
 	             Crypto_cipher_buffer &crypto_cipher_buf,
 	             Time::Timestamp       now);
 
@@ -178,10 +179,11 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 	 * \return  true if the CBE acknowledged the request
 	 */
 	bool supply_io_data(Request    const &request,
+	                    Io_buffer        &io_buf,
 	                    Block_data const &data)
 	{
 		bool result = false;
-		_supply_io_data(request, data, result);
+		_supply_io_data(request, io_buf, data, result);
 		return result;
 	}
 
@@ -211,10 +213,11 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 	 * \return  true if the CBE could process the request
 	 */
 	bool obtain_io_data(Request    const &request,
+	                    Io_buffer  const &io_buf,
 	                    Block_data       &data)
 	{
 		bool result = false;
-		_obtain_io_data(request, data, result);
+		_obtain_io_data(request, io_buf, data, result);
 		return result;
 	}
 
@@ -275,10 +278,11 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 	}
 
 	bool obtain_client_data_2(Request const &request,
+	                          Io_buffer     &io_buf,
 	                          Block_data    &data)
 	{
 		bool result = false;
-		_obtain_client_data_2(request, data, result);
+		_obtain_client_data_2(request, io_buf, data, result);
 		return result;
 	}
 

@@ -10,6 +10,7 @@ pragma Ada_2012;
 
 with CBE.Library;
 with CBE.Crypto;
+with CBE.Block_IO;
 
 package CBE.CXX.CXX_Library
 with SPARK_Mode
@@ -83,6 +84,7 @@ is
 
    procedure Execute (
       Obj               : in out Library.Object_Type;
+      IO_Buf            : in out Block_IO.Data_Type;
       Crypto_Plain_Buf  : in out Crypto.Plain_Buffer_Type;
       Crypto_Cipher_Buf : in out Crypto.Cipher_Buffer_Type;
       Now               :        Timestamp_Type)
@@ -90,8 +92,8 @@ is
       Export,
       Convention    => C,
       External_Name =>
-         "_ZN3Cbe7Library7executeERNS_19Crypto_plain_bufferERNS_" &
-         "20Crypto_cipher_bufferEy";
+         "_ZN3Cbe7Library7executeERNS_9Io_bufferERNS_" &
+         "19Crypto_plain_bufferERNS_20Crypto_cipher_bufferEy";
 
    function Request_Acceptable (Obj : Library.Object_Type)
    return CXX_Bool_Type
@@ -145,13 +147,15 @@ is
    procedure Supply_IO_Data (
       Obj      : in out Library.Object_Type;
       Req      :        CXX_Request_Type;
+      IO_Buf   : in out Block_IO.Data_Type;
       Data     :        Block_Data_Type;
       Progress :    out CXX_Bool_Type)
    with
       Export,
       Convention    => C,
       External_Name =>
-         "_ZN3Cbe7Library15_supply_io_dataERKNS_7RequestERKNS_10Block_dataERb";
+         "_ZN3Cbe7Library15_supply_io_dataERKNS_7RequestERNS_" &
+         "9Io_bufferERKNS_10Block_dataERb";
 
    procedure Has_IO_Data_To_Write (
       Obj : in out Library.Object_Type;
@@ -164,13 +168,15 @@ is
    procedure Obtain_IO_Data (
       Obj      : in out Library.Object_Type;
       Req      :        CXX_Request_Type;
+      IO_Buf   :        Block_IO.Data_Type;
       Data     :    out Block_Data_Type;
       Progress :    out CXX_Bool_Type)
    with
       Export,
       Convention    => C,
       External_Name =>
-         "_ZN3Cbe7Library15_obtain_io_dataERKNS_7RequestERNS_10Block_dataERb";
+         "_ZN3Cbe7Library15_obtain_io_dataERKNS_7RequestERKNS_" &
+         "9Io_bufferERNS_10Block_dataERb";
 
    procedure Ack_IO_Data_To_Write (
       Obj      : in out Library.Object_Type;
@@ -212,16 +218,17 @@ is
          "19Crypto_plain_buffer5IndexERb";
 
    procedure Obtain_Client_Data_2 (
-      Obj              : in out Library.Object_Type;
-      Req              :        CXX_Request_Type;
-      Data             :    out Crypto.Plain_Data_Type;
-      Progress         :    out CXX_Bool_Type)
+      Obj      : in out Library.Object_Type;
+      Req      :        CXX_Request_Type;
+      IO_Buf   : in out Block_IO.Data_Type;
+      Data     :    out Crypto.Plain_Data_Type;
+      Progress :    out CXX_Bool_Type)
    with
       Export,
       Convention    => C,
       External_Name =>
          "_ZN3Cbe7Library21_obtain_client_data_2ERKNS_7RequestERNS_" &
-         "10Block_dataERb";
+         "9Io_bufferERNS_10Block_dataERb";
 
    procedure Client_Data_Required (
       Obj : in out Library.Object_Type;

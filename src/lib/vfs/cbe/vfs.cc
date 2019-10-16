@@ -65,6 +65,7 @@ class Vfs_cbe::Block_file_system : public Single_file_system
 		Vfs::Env          &_env;
 		Single_vfs_handle *_backend { nullptr };
 
+		Cbe::Io_buffer            _io_data { };
 		Cbe::Crypto_cipher_buffer _cipher_data { };
 		Cbe::Crypto_plain_buffer  _plain_data { };
 		External::Crypto _crypto { };
@@ -144,6 +145,7 @@ class Vfs_cbe::Block_file_system : public Single_file_system
 		{
 			Genode::Allocator         &_alloc;
 			External::Crypto          &_crypto;
+			Cbe::Io_buffer            &_io_data;
 			Cbe::Crypto_plain_buffer  &_plain_data;
 			Cbe::Crypto_cipher_buffer &_cipher_data;
 			Cbe::Library              &_cbe;
@@ -158,6 +160,7 @@ class Vfs_cbe::Block_file_system : public Single_file_system
 			           File_io_service           &fs,
 			           Genode::Allocator         &alloc,
 			           External::Crypto          &crypto,
+			           Cbe::Io_buffer            &io_data,
 			           Cbe::Crypto_plain_buffer  &plain_data,
 			           Cbe::Crypto_cipher_buffer &cipher_data,
 			           Cbe::Library              &cbe,
@@ -167,6 +170,7 @@ class Vfs_cbe::Block_file_system : public Single_file_system
 			: Single_vfs_handle(ds, fs, alloc, 0),
 			  _alloc(alloc),
 			  _crypto(crypto),
+			  _io_data(io_data),
 			  _plain_data(plain_data),
 			  _cipher_data(cipher_data),
 			  _cbe(cbe),
@@ -226,7 +230,7 @@ class Vfs_cbe::Block_file_system : public Single_file_system
 
 				Cbe::Block_data &data = *reinterpret_cast<Cbe::Block_data *>(buf);
 				request.success = Cbe::Request::Success::TRUE;
-				_cbe.supply_io_data(request, data);
+				_cbe.supply_io_data(request, _io_data, data);
 				_alloc.free(buf, count);
 
 				_backend_request = Cbe::Request { };
@@ -242,7 +246,7 @@ class Vfs_cbe::Block_file_system : public Single_file_system
 				char *buf;
 				_alloc.alloc(count, &buf);
 				Cbe::Block_data &data = *reinterpret_cast<Cbe::Block_data *>(buf);
-				_cbe.obtain_io_data(request, data);
+				_cbe.obtain_io_data(request, _io_data, data);
 
 				_backend->seek(request.block_number * Cbe::BLOCK_SIZE);
 
@@ -288,7 +292,7 @@ class Vfs_cbe::Block_file_system : public Single_file_system
 						progress = true;
 					}
 
-					_cbe.execute(_plain_data, _cipher_data, _time.timestamp());
+					_cbe.execute(_io_data, _plain_data, _cipher_data, _time.timestamp());
 					progress |= _cbe.execute_progress();
 
 					/* read */
@@ -314,7 +318,7 @@ class Vfs_cbe::Block_file_system : public Single_file_system
 
 							progress |= true;
 						} else {
-							progress |= _cbe.obtain_client_data_2(cbe_request, data);
+							progress |= _cbe.obtain_client_data_2(cbe_request, _io_data, data);
 						}
 					}
 
@@ -528,8 +532,10 @@ class Vfs_cbe::Block_file_system : public Single_file_system
 				_cbe.construct(_super_blocks, _cur_sb);
 			}
 			log("open: ", path);
-			*out_handle = new (alloc) Vfs_handle(*this, *this, alloc, _crypto, _plain_data, _cipher_data, *_cbe,
-			                                     _time, _backend, _show_progress);
+			*out_handle = new (alloc)
+				Vfs_handle(*this, *this, alloc, _crypto,
+				           _io_data, _plain_data, _cipher_data, *_cbe,
+				           _time, _backend, _show_progress);
 
 			return OPEN_OK;
 		}
