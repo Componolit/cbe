@@ -445,6 +445,7 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 				 */
 
 				bool io_progress = false;
+				struct Invalid_io_request : Exception { };
 
 				/*
 				 * Handle backend I/O requests
@@ -452,9 +453,9 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 				while (_block.tx()->ready_to_submit()) {
 
 					Io_buffer::Index data_index { 0 };
-					Cbe::Request request = _cbe->io_data_required(data_index);
+					Cbe::Request request = _cbe->has_io_request(data_index);
 
-					log("\033[36m INF ", "io_data_required: ", request);
+					log("\033[36m INF ", "has_io_request: ", request);
 					if (!request.valid()) {
 						break;
 					}
@@ -463,56 +464,31 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 					}
 					try {
 						request.tag = data_index.value;
+						Block::Packet_descriptor::Opcode op;
+						switch (request.operation) {
+						case Request::Operation::READ:
+							op = Block::Packet_descriptor::READ;
+							break;
+						case Request::Operation::WRITE:
+							op = Block::Packet_descriptor::WRITE;
+							break;
+						default:
+							throw Invalid_io_request();
+						}
 						Block::Packet_descriptor packet {
-							_block.alloc_packet(Cbe::BLOCK_SIZE),
-							Block::Packet_descriptor::READ,
-							request.block_number,
-							request.count,
-						};
+							_block.alloc_packet(Cbe::BLOCK_SIZE), op,
+							request.block_number, request.count };
 
-						_block.tx()->try_submit_packet(packet);
-						_backend_request = request;
-
-						log("\033[36m INF ", "io_data_read_in_progress: ", request);
-						_cbe->io_data_gets_read(data_index);
-
-						progress |= true;
-						io_progress |= true;
-					}
-					catch (Block::Session::Tx::Source::Packet_alloc_failed) { break; }
-				}
-
-				while (_block.tx()->ready_to_submit()) {
-
-					Io_buffer::Index data_index { 0 };
-					Cbe::Request request =
-						_cbe->has_io_data_to_write(data_index);
-
-					log("\033[36m INF ", "has_io_data_to_write: ", request);
-					if (!request.valid()) {
-						break;
-					}
-					if (_backend_request.valid()) {
-						break;
-					}
-					try {
-						request.tag = data_index.value;
-						Block::Packet_descriptor packet {
-							_block.alloc_packet(Cbe::BLOCK_SIZE),
-							Block::Packet_descriptor::WRITE,
-							request.block_number,
-							request.count,
-						};
-						Cbe::Block_data &data =
+						if (request.operation == Request::Operation::WRITE) {
 							*reinterpret_cast<Cbe::Block_data*>(
-								_block.tx()->packet_content(packet));
-						data = _io_buf.item(data_index);
-
+								_block.tx()->packet_content(packet)) =
+									_io_buf.item(data_index);
+						}
 						_block.tx()->try_submit_packet(packet);
 						_backend_request = request;
 
-						log("\033[36m INF ", "io_data_gets_written: ", request);
-						_cbe->io_data_gets_written(data_index);
+						log("\033[36m INF ", "io_request_in_progress: ", request);
+						_cbe->io_request_in_progress(data_index);
 
 						progress |= true;
 						io_progress |= true;
@@ -539,24 +515,14 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 
 					Io_buffer::Index const data_index { _backend_request.tag };
 					bool             const success    { _backend_request.success == Request::Success::TRUE };
-					if (read) {
-						if (success) {
-							Cbe::Block_data &data =
-								*reinterpret_cast<Cbe::Block_data*>(
-									_block.tx()->packet_content(packet));
-							_io_buf.item(data_index) = data;
-						}
-
-						_cbe->supply_io_data(data_index, success);
-						progress |= true;
-						log("\033[36m INF ", "supply_io_data: ", _backend_request);
-					} else
-
-					if (write) {
-						_cbe->ack_io_data_to_write(data_index, success);
-						progress |= true;
-						log("\033[36m INF ", "ack_io_data_to_write: ", _backend_request);
+					if (read && success) {
+						_io_buf.item(data_index) =
+							*reinterpret_cast<Cbe::Block_data*>(
+								_block.tx()->packet_content(packet));
 					}
+					log("\033[36m INF ", "io_request_completed: ", _backend_request);
+					_cbe->io_request_completed(data_index, success);
+					progress |= true;
 
 					_block.tx()->release_packet(packet);
 

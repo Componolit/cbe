@@ -1259,46 +1259,6 @@ is
       Pool.Drop_Completed_Request (Obj.Request_Pool_Obj, Req);
    end Drop_Completed_Request;
 
-   procedure IO_Data_Required (
-      Obj      : in out Object_Type;
-      Req      :    out Request.Object_Type;
-      Data_Idx :    out Block_IO.Data_Index_Type)
-   is
-   begin
-      Req      := Request.Invalid_Object;
-      Data_Idx := 0;
-
-      if Primitive.Valid (Obj.Back_End_Req_Prim.Prim) then
-         return;
-      end if;
-
-      --  I/O module
-      declare
-         Prim : constant Primitive.Object_Type :=
-            Block_IO.Peek_Generated_Primitive (Obj.IO_Obj);
-      begin
-         if Primitive.Valid (Prim) and then Primitive.Operation (Prim) = Read
-         then
-            Obj.Back_End_Req_Prim := (
-               Req => Request.Valid_Object (
-                  Op     => Primitive.Operation (Prim),
-                  Succ   => False,
-                  Blk_Nr => Primitive.Block_Number (Prim),
-                  Off    => 0,
-                  Cnt    => 1,
-                  Tg     => 0),
-               Prim        => Prim,
-               Tag         => Tag_IO,
-               In_Progress => False
-            );
-            Data_Idx := Block_IO.Peek_Generated_Data_Index (Obj.IO_Obj, Prim);
-            Req      := Obj.Back_End_Req_Prim.Req;
-         else
-            Req := Request.Invalid_Object;
-         end if;
-      end;
-   end IO_Data_Required;
-
    --
    --  For now there can be only one Request pending.
    --
@@ -1308,39 +1268,7 @@ is
    return Boolean
    is (not Request.Equal (Obj.Front_End_Req_Prim.Req, Req));
 
-   procedure IO_Data_Gets_Read (
-      Obj      : in out Object_Type;
-      Data_Idx :        Block_IO.Data_Index_Type)
-   is
-   begin
-      if Obj.Back_End_Req_Prim.In_Progress or else
-         Obj.Back_End_Req_Prim.Tag /= Tag_IO
-      then
-         raise Program_Error;
-      end if;
-      Block_IO.Drop_Generated_Primitive_2 (Obj.IO_Obj, Data_Idx);
-      Obj.Back_End_Req_Prim.In_Progress := True;
-   end IO_Data_Gets_Read;
-
-   procedure Supply_IO_Data (
-      Obj        : in out Object_Type;
-      Data_Index :        Block_IO.Data_Index_Type;
-      Success    :        Boolean)
-   is
-   begin
-      if not Obj.Back_End_Req_Prim.In_Progress or else
-         Obj.Back_End_Req_Prim.Tag /= Tag_IO
-      then
-         raise Program_Error;
-      end if;
-
-      Block_IO.Mark_Generated_Primitive_Complete_2 (
-         Obj.IO_Obj, Data_Index, Success);
-
-      Obj.Back_End_Req_Prim := Request_Primitive_Invalid;
-   end Supply_IO_Data;
-
-   procedure Has_IO_Data_To_Write (
+   procedure Has_IO_Request (
       Obj      : in out Object_Type;
       Req      :    out Request.Object_Type;
       Data_Idx :    out Block_IO.Data_Index_Type)
@@ -1353,14 +1281,11 @@ is
          return;
       end if;
 
-      --  I/O module
       declare
          Prim : constant Primitive.Object_Type :=
             Block_IO.Peek_Generated_Primitive (Obj.IO_Obj);
       begin
-         if Primitive.Valid (Prim) and then
-            Primitive.Operation (Prim) = Write
-         then
+         if Primitive.Valid (Prim) then
             Obj.Back_End_Req_Prim := (
                Req => Request.Valid_Object (
                   Op     => Primitive.Operation (Prim),
@@ -1377,9 +1302,9 @@ is
             Req      := Obj.Back_End_Req_Prim.Req;
          end if;
       end;
-   end Has_IO_Data_To_Write;
+   end Has_IO_Request;
 
-   procedure IO_Data_Gets_Written (
+   procedure IO_Request_In_Progress (
       Obj      : in out Object_Type;
       Data_Idx :        Block_IO.Data_Index_Type)
    is
@@ -1391,9 +1316,9 @@ is
       end if;
       Block_IO.Drop_Generated_Primitive_2 (Obj.IO_Obj, Data_Idx);
       Obj.Back_End_Req_Prim.In_Progress := True;
-   end IO_Data_Gets_Written;
+   end IO_Request_In_Progress;
 
-   procedure Ack_IO_Data_To_Write (
+   procedure IO_Request_Completed (
       Obj        : in out Object_Type;
       Data_Index :        Block_IO.Data_Index_Type;
       Success    :        Boolean)
@@ -1404,12 +1329,11 @@ is
       then
          raise Program_Error;
       end if;
-
       Block_IO.Mark_Generated_Primitive_Complete_2 (
          Obj.IO_Obj, Data_Index, Success);
 
       Obj.Back_End_Req_Prim := Request_Primitive_Invalid;
-   end Ack_IO_Data_To_Write;
+   end IO_Request_Completed;
 
    procedure Client_Data_Ready (
       Obj : in out Object_Type;

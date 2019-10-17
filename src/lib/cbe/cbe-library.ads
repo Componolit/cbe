@@ -104,27 +104,6 @@ is
       Req :        Request.Object_Type);
 
    --
-   --  Return a read request for the backend block session
-   --
-   --  \param Req  return valid request in case the is one pending that
-   --             needs data, otherwise an invalid one is returned
-   --
-   procedure IO_Data_Required (
-      Obj      : in out Object_Type;
-      Req      :    out Request.Object_Type;
-      Data_Idx :    out Block_IO.Data_Index_Type);
-
-   --
-   --  Mark read request for backend block session
-   --
-   --  \param Req       reference to the request from the CBE
-   --  \param Progress  return true if the CBE could process the request
-   --
-   procedure IO_Data_Gets_Read (
-      Obj      : in out Object_Type;
-      Data_Idx :        Block_IO.Data_Index_Type);
-
-   --
    --  Submit read request data from the backend block session to the CBE
    --
    --  The given data will be transfered to the CBE.
@@ -133,7 +112,7 @@ is
    --  \param Data      reference to the data associated with the request
    --  \param Progress  return true if the CBE acknowledged the request
    --
-   procedure Supply_IO_Data (
+   procedure IO_Request_Completed (
       Obj        : in out Object_Type;
       Data_Index :        Block_IO.Data_Index_Type;
       Success    :        Boolean);
@@ -144,7 +123,7 @@ is
    --  \param Req  return valid request in case the is one pending that
    --             needs data, otherwise an invalid one is returned
    --
-   procedure Has_IO_Data_To_Write (
+   procedure Has_IO_Request (
       Obj      : in out Object_Type;
       Req      :    out Request.Object_Type;
       Data_Idx :    out Block_IO.Data_Index_Type);
@@ -158,14 +137,9 @@ is
    --  \param Data      reference to the data associated with the request
    --  \param Progress  return true if the CBE could process the request
    --
-   procedure IO_Data_Gets_Written (
+   procedure IO_Request_In_Progress (
       Obj      : in out Object_Type;
       Data_Idx :        Block_IO.Data_Index_Type);
-
-   procedure Ack_IO_Data_To_Write (
-      Obj        : in out Object_Type;
-      Data_Index :        Block_IO.Data_Index_Type;
-      Success    :        Boolean);
 
    --
    --  Return a client request that provides data to the frontend block data

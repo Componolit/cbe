@@ -126,27 +126,7 @@ is
       External_Name =>
          "_ZN3Cbe7Library29drop_completed_client_requestERKNS_7RequestE";
 
-   procedure IO_Data_Required (
-      Obj        : in out Library.Object_Type;
-      Req        :    out CXX_Request_Type;
-      Data_Index :    out CXX_IO_Buffer_Index_Type)
-   with
-      Export,
-      Convention    => C,
-      External_Name =>
-         "_ZN3Cbe7Library17_io_data_requiredERNS_7RequestERNS_9Io_buffer" &
-         "5IndexE";
-
-   procedure IO_Data_Gets_Read (
-      Obj        : in out Library.Object_Type;
-      Data_Index :        CXX_IO_Buffer_Index_Type)
-   with
-      Export,
-      Convention    => C,
-      External_Name =>
-         "_ZN3Cbe7Library17io_data_gets_readERKNS_9Io_buffer5IndexE";
-
-   procedure Supply_IO_Data (
+   procedure IO_Request_Completed (
       Obj        : in out Library.Object_Type;
       Data_Index :        CXX_Crypto_Cipher_Buffer_Index_Type;
       Success    :        CXX_Bool_Type)
@@ -154,9 +134,9 @@ is
       Export,
       Convention    => C,
       External_Name =>
-         "_ZN3Cbe7Library14supply_io_dataERKNS_9Io_buffer5IndexEb";
+         "_ZN3Cbe7Library20io_request_completedERKNS_9Io_buffer5IndexEb";
 
-   procedure Has_IO_Data_To_Write (
+   procedure Has_IO_Request (
       Obj        : in out Library.Object_Type;
       Req        :    out CXX_Request_Type;
       Data_Index :    out CXX_IO_Buffer_Index_Type)
@@ -164,27 +144,16 @@ is
       Export,
       Convention    => C,
       External_Name =>
-         "_ZN3Cbe7Library21_has_io_data_to_writeERNS_7RequestERNS_9Io_buffer" &
-         "5IndexE";
+         "_ZN3Cbe7Library15_has_io_requestERNS_7RequestERNS_9Io_buffer5IndexE";
 
-   procedure IO_Data_Gets_Written (
+   procedure IO_Request_In_Progress (
       Obj        : in out Library.Object_Type;
       Data_Index :        CXX_IO_Buffer_Index_Type)
    with
       Export,
       Convention    => C,
       External_Name =>
-         "_ZN3Cbe7Library20io_data_gets_writtenERKNS_9Io_buffer5IndexE";
-
-   procedure Ack_IO_Data_To_Write (
-      Obj        : in out Library.Object_Type;
-      Data_Index :        CXX_Crypto_Cipher_Buffer_Index_Type;
-      Success    :        CXX_Bool_Type)
-   with
-      Export,
-      Convention    => C,
-      External_Name =>
-         "_ZN3Cbe7Library20ack_io_data_to_writeERKNS_9Io_buffer5IndexEb";
+         "_ZN3Cbe7Library22io_request_in_progressERKNS_9Io_buffer5IndexE";
 
    procedure Client_Data_Ready (
       Obj : in out Library.Object_Type;

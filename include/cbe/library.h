@@ -41,8 +41,7 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 		 * procedures that return the 'progress' result as last out parameter.
 		 */
 
-		void _io_data_required(Request &, Io_buffer::Index &);
-		void _has_io_data_to_write(Request &, Io_buffer::Index &);
+		void _has_io_request(Request &, Io_buffer::Index &);
 
 		void _client_data_ready(Request &);
 		void _obtain_client_data(Request const &, Crypto_plain_buffer::Index &, bool &);
@@ -138,27 +137,6 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 	 */
 
 	/**
-	 * Return a read request for the backend block session
-	 *
-	 * \param result  valid request in case the is one pending that
-	 *                needs data, otherwise an invalid one is returned
-	 */
-	Request io_data_required(Io_buffer::Index &data_index)
-	{
-		Request result { };
-		_io_data_required(result, data_index);
-		return result;
-	}
-
-	/**
-	 * Mark read request for backend block session as in progress
-	 *
-	 * \param  request  reference to the request from the CBE
-	 * \return  true if the CBE could process the request
-	 */
-	void io_data_gets_read(Io_buffer::Index const &data_index);
-
-	/**
 	 * Submit read request data from the backend block session to the CBE
 	 *
 	 * The given data will be transfered to the CBE.
@@ -169,8 +147,8 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 	 *
 	 * \return  true if the CBE acknowledged the request
 	 */
-	void supply_io_data(Io_buffer::Index const &data_index,
-	                    bool             const  success);
+	void io_request_completed(Io_buffer::Index const &data_index,
+	                          bool             const  success);
 
 	/**
 	 * Return a write request for the backend block session
@@ -178,10 +156,10 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 	 * \param result  valid request in case the is one pending that
 	 *                needs data, otherwise an invalid one is returned
 	 */
-	Request has_io_data_to_write(Io_buffer::Index &data_index)
+	Request has_io_request(Io_buffer::Index &data_index)
 	{
 		Request result { };
-		_has_io_data_to_write(result, data_index);
+		_has_io_request(result, data_index);
 		return result;
 	}
 
@@ -197,20 +175,7 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 	 *
 	 * \return  true if the CBE could process the request
 	 */
-	void io_data_gets_written(Io_buffer::Index const &data_index);
-
-	/**
-	 * Acknowledge data for write request for the backend block session
-	 *
-	 * \param  request  reference to the Block::Request processed
-	 *                  by the CBE
-	 * \param  data     reference to the data associated with the
-	 *                  Request
-	 *
-	 * \return  true if the CBE could process the request
-	 */
-	void ack_io_data_to_write(Io_buffer::Index const &data_index,
-	                          bool             const  success);
+	void io_request_in_progress(Io_buffer::Index const &data_index);
 
 	/*
 	 * Frontend block I/O

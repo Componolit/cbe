@@ -97,7 +97,19 @@ is
       Library.Drop_Completed_Request (Obj, CXX_Request_To_SPARK (Req));
    end Drop_Completed_Request;
 
-   procedure IO_Data_Required (
+   procedure IO_Request_Completed (
+      Obj        : in out Library.Object_Type;
+      Data_Index :        CXX_Crypto_Cipher_Buffer_Index_Type;
+      Success    :        CXX_Bool_Type)
+   is
+   begin
+      Library.IO_Request_Completed (
+         Obj, Block_IO.Data_Index_Type (Data_Index.Value),
+         CXX_Bool_To_SPARK (Success));
+
+   end IO_Request_Completed;
+
+   procedure Has_IO_Request (
       Obj        : in out Library.Object_Type;
       Req        :    out CXX_Request_Type;
       Data_Index :    out CXX_IO_Buffer_Index_Type)
@@ -105,65 +117,19 @@ is
       SPARK_Req        : Request.Object_Type;
       SPARK_Data_Index : Block_IO.Data_Index_Type;
    begin
-      Library.IO_Data_Required (Obj, SPARK_Req, SPARK_Data_Index);
+      Library.Has_IO_Request (Obj, SPARK_Req, SPARK_Data_Index);
       Req        := CXX_Request_From_SPARK (SPARK_Req);
       Data_Index := (Value => CXX_UInt32_Type (SPARK_Data_Index));
-   end IO_Data_Required;
+   end Has_IO_Request;
 
-   procedure IO_Data_Gets_Read (
+   procedure IO_Request_In_Progress (
       Obj        : in out Library.Object_Type;
       Data_Index :        CXX_IO_Buffer_Index_Type)
    is
    begin
-      Library.IO_Data_Gets_Read (
+      Library.IO_Request_In_Progress (
          Obj, Block_IO.Data_Index_Type (Data_Index.Value));
-   end IO_Data_Gets_Read;
-
-   procedure Supply_IO_Data (
-      Obj        : in out Library.Object_Type;
-      Data_Index :        CXX_Crypto_Cipher_Buffer_Index_Type;
-      Success    :        CXX_Bool_Type)
-   is
-   begin
-      Library.Supply_IO_Data (
-         Obj, Block_IO.Data_Index_Type (Data_Index.Value),
-         CXX_Bool_To_SPARK (Success));
-
-   end Supply_IO_Data;
-
-   procedure Has_IO_Data_To_Write (
-      Obj        : in out Library.Object_Type;
-      Req        :    out CXX_Request_Type;
-      Data_Index :    out CXX_IO_Buffer_Index_Type)
-   is
-      SPARK_Req        : Request.Object_Type;
-      SPARK_Data_Index : Block_IO.Data_Index_Type;
-   begin
-      Library.Has_IO_Data_To_Write (Obj, SPARK_Req, SPARK_Data_Index);
-      Req        := CXX_Request_From_SPARK (SPARK_Req);
-      Data_Index := (Value => CXX_UInt32_Type (SPARK_Data_Index));
-   end Has_IO_Data_To_Write;
-
-   procedure IO_Data_Gets_Written (
-      Obj        : in out Library.Object_Type;
-      Data_Index :        CXX_IO_Buffer_Index_Type)
-   is
-   begin
-      Library.IO_Data_Gets_Written (
-         Obj, Block_IO.Data_Index_Type (Data_Index.Value));
-   end IO_Data_Gets_Written;
-
-   procedure Ack_IO_Data_To_Write (
-      Obj        : in out Library.Object_Type;
-      Data_Index :        CXX_Crypto_Cipher_Buffer_Index_Type;
-      Success    :        CXX_Bool_Type)
-   is
-   begin
-      Library.Ack_IO_Data_To_Write (
-         Obj, Block_IO.Data_Index_Type (Data_Index.Value),
-         CXX_Bool_To_SPARK (Success));
-
-   end Ack_IO_Data_To_Write;
+   end IO_Request_In_Progress;
 
    procedure Client_Data_Ready (
       Obj : in out Library.Object_Type;

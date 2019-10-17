@@ -208,8 +208,8 @@ class Vfs_cbe::Block_file_system : public Single_file_system
 				};
 			}
 
-			void backend_read(Cbe::Request                &request,
-			                  Cbe::Io_buffer::Index const  data_index)
+			void backend_request(Cbe::Request                &request,
+			                     Cbe::Io_buffer::Index const  data_index)
 			{
 				request.tag = data_index.value;
 				file_size count = request.count * Cbe::BLOCK_SIZE;
@@ -217,55 +217,37 @@ class Vfs_cbe::Block_file_system : public Single_file_system
 
 				_backend_request = request;
 
-				_cbe.io_data_gets_read(data_index);
+				char *buf = nullptr;
+				_alloc.alloc(count, &buf);
+				if (request.write()) {
+					*reinterpret_cast<Cbe::Block_data *>(buf) =
+						_io_data.item(data_index);
+				}
+				_cbe.io_request_in_progress(data_index);
 
 				_backend->seek(request.block_number * Cbe::BLOCK_SIZE);
 
-				char *buf = 0;
-				_alloc.alloc(count, &buf);
+				if (request.read()) {
 
-				if (_backend->read(buf, count, out) == READ_QUEUED) {
-					_alloc.free(buf, count);
-					_state = IO_PENDING;
-					return;
+					if (_backend->read(buf, count, out) == READ_QUEUED) {
+						_alloc.free(buf, count);
+						_state = IO_PENDING;
+						return;
+					}
+					_io_data.item(data_index) =
+						*reinterpret_cast<Cbe::Block_data *>(buf);
+
+				} else if (request.write()) {
+
+					try {
+						_backend->write(buf, count, out);
+					} catch (Insufficient_buffer) {
+						_alloc.free(buf, count);
+						_state = IO_PENDING;
+						return;
+					}
 				}
-
-				Cbe::Block_data &data = *reinterpret_cast<Cbe::Block_data *>(buf);
-				request.success = Cbe::Request::Success::TRUE;
-				_io_data.item(data_index) = data;
-				_cbe.supply_io_data(data_index, request.success == Cbe::Request::Success::TRUE);
-				_alloc.free(buf, count);
-
-				_backend_request = Cbe::Request { };
-			}
-
-			void backend_write(Cbe::Request                &request,
-			                   Cbe::Io_buffer::Index const  data_index)
-			{
-				request.tag = data_index.value;
-				file_size count = request.count * Cbe::BLOCK_SIZE;
-				file_size out = 0;
-
-				_backend_request = request;
-
-				char *buf;
-				_alloc.alloc(count, &buf);
-				Cbe::Block_data &data = *reinterpret_cast<Cbe::Block_data *>(buf);
-				data = _io_data.item(data_index);
-				_cbe.io_data_gets_written(data_index);
-
-				_backend->seek(request.block_number * Cbe::BLOCK_SIZE);
-
-				try {
-					_backend->write(buf, count, out);
-				} catch (Insufficient_buffer) {
-					_alloc.free(buf, count);
-					_state = IO_PENDING;
-					return;
-				}
-
-				request.success = Cbe::Request::Success::TRUE;
-				_cbe.ack_io_data_to_write(data_index, request.success == Cbe::Request::Success::TRUE);
+				_cbe.io_request_completed(data_index, true);
 				_alloc.free(buf, count);
 				_backend_request = Cbe::Request { };
 			}
@@ -347,15 +329,9 @@ class Vfs_cbe::Block_file_system : public Single_file_system
 					}
 
 					Cbe::Io_buffer::Index data_index { 0 };
-					cbe_request = _cbe.io_data_required(data_index);
+					cbe_request = _cbe.has_io_request(data_index);
 					if (cbe_request.valid() && !_backend_request.valid()) {
-						backend_read(cbe_request, data_index);
-						progress = true;
-					}
-
-					cbe_request = _cbe.has_io_data_to_write(data_index);
-					if (cbe_request.valid() && !_backend_request.valid()) {
-						backend_write(cbe_request, data_index);
+						backend_request(cbe_request, data_index);
 						progress = true;
 					}
 
