@@ -65,6 +65,26 @@ is
    procedure Start_Sealing_Generation (Obj : in out Object_Type);
 
    --
+   --  Create snapshot
+   --
+   --  \param snap_id   id of the snapshot
+   --
+   procedure Create_Snapshot (
+      Obj     : in out Object_Type;
+      Quara   :        Boolean;
+      Snap_id :    out Snapshot_ID_Type);
+
+   --
+   --  Check if snapshot creation is complete
+   --
+   --  \param snap_id   id of the snapshot
+   --
+   function Snapshot_Creation_Complete (
+      Obj     : Object_Type;
+      Snap_id : Snapshot_ID_Type)
+   return Boolean;
+
+   --
    --  Check if the CBE can accept a new requeust
    --
    --  \return true if a request can be accepted, otherwise false

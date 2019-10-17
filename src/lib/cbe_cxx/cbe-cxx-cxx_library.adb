@@ -55,6 +55,30 @@ is
       Library.Start_Sealing_Generation (Obj);
    end Start_Sealing_Generation;
 
+   procedure Create_Snapshot (
+      Obj     : in out Library.Object_Type;
+      Quara   :        CXX_Bool_Type;
+      Snap_id :    out CXX_Snapshot_ID_Type)
+   is
+      Snap_id_SPARK : Snapshot_ID_Type;
+   begin
+      Library.Create_Snapshot (
+         Obj,
+         CXX_Bool_To_SPARK (Quara),
+         Snap_id_SPARK);
+      Snap_id := CXX_Snapshot_ID_Type (Snap_id_SPARK);
+   end Create_Snapshot;
+
+   function Snapshot_Creation_Complete (
+      Obj     : Library.Object_Type;
+      Snap_id : CXX_Snapshot_ID_Type)
+   return CXX_Bool_Type
+   is
+   begin
+      return (CXX_Bool_From_SPARK (Library.Snapshot_Creation_Complete (Obj,
+         Snapshot_ID_Type (Snap_id))));
+   end Snapshot_Creation_Complete;
+
    function Max_VBA (Obj : Library.Object_Type)
    return Virtual_Block_Address_Type
    is

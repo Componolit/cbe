@@ -80,6 +80,47 @@ is
       Obj.Seal_Generation := True;
    end Start_Sealing_Generation;
 
+   procedure Create_Snapshot (
+      Obj     : in out Object_Type;
+      Quara   :        Boolean;
+      Snap_id :    out Snapshot_ID_Type)
+   is
+   begin
+      null;
+   end Create_Snapshot;
+
+   function Snapshot_Creation_Complete (
+      Obj     : Object_Type;
+      Snap_id : Snapshot_ID_Type)
+   return Boolean
+   is
+   begin
+      --  DUMMY
+      if Obj.Seal_Generation = True and then Snap_id /= 0 then
+         return True;
+      end if;
+
+      return False;
+   end Snapshot_Creation_Complete;
+
+   --  function Superblock_Snapshot_Slot (SB : Superblock_Type)
+   --  return Snapshot_ID_Type
+   --  is
+   --     Snap_Slot : Snapshot_ID_Type := Snapshot_ID_Invalid_Slot;
+   --  begin
+   --     For_Snapshots :
+   --     for Snap_Index in Snapshots_Index_Type loop
+   --        if
+   --           Snapshot_Valid (SB.Snapshots (Snap_Index)) and then
+   --           SB.Snapshots (Snap_Index).ID = SB.Snapshot_ID
+   --        then
+   --           Snap_Slot := Snapshot_ID_Type (Snap_Index);
+   --           exit For_Snapshots;
+   --        end if;
+   --     end loop For_Snapshots;
+   --     return Snap_Slot;
+   --  end Superblock_Snapshot_Slot;
+
    procedure Initialize_Object (
       Obj     : out Object_Type;
       SBs     :     Superblocks_Type;

@@ -51,6 +51,9 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 		void _crypto_cipher_data_required(Request &, Crypto_plain_buffer::Index &);
 		void _crypto_plain_data_required(Request &, Crypto_cipher_buffer::Index &);
 
+		void _create_snapshot(bool, uint32_t &id);
+
+
 	public:
 
 	/**
@@ -246,6 +249,28 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 		_supply_client_data(now, request, data, result);
 		return result;
 	}
+
+	/**
+	 * Create snapshot
+	 *
+	 * \param quaratine  if set to true a quaratine snapshot will be
+	 *                   created, otherwise a disposable one
+	 *
+	 * \return snapshot id of the resulting snapshot
+	 */
+	uint32_t create_snapshot(bool quaratine)
+	{
+		uint32_t id { 0 };
+		_create_snapshot(quaratine, id);
+		return id;
+	}
+
+	/**
+	 * Check completion state of snapshot creation
+	 *
+	 * \return snapshot id of the resulting snapshot
+	 */
+	bool snapshot_creation_complete(uint32_t id) const;
 
 	bool is_sealing_generation() const;
 	bool is_securing_superblock() const;
