@@ -161,16 +161,7 @@ is
       Obj      : in out Object_Type;
       Data_Idx :        Data_Index_Type);
 
-   --
-   --  Mark given generated primitive as complete
-   --
-   --  \param p  reference to primitive
-   --
    procedure Mark_Generated_Primitive_Complete (
-      Obj  : in out Object_Type;
-      Prim :        Primitive.Object_Type);
-
-   procedure Mark_Generated_Primitive_Complete_2 (
       Obj      : in out Object_Type;
       Data_Idx :        Data_Index_Type;
       Success  :        Boolean);

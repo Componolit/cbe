@@ -190,26 +190,6 @@ is
    end Drop_Generated_Primitive_2;
 
    procedure Mark_Generated_Primitive_Complete (
-      Obj  : in out Object_Type;
-      Prim :        Primitive.Object_Type)
-   is
-   begin
-      for I in Obj.Entries'Range loop
-         if
-            Obj.Entries (I).State = In_Progress and then
-            Primitive.Equal (Prim, Obj.Entries (I).Prim)
-         then
-            Primitive.Success (Obj.Entries (I).Prim, Primitive.Success (Prim));
-            Obj.Entries (I).State := Complete;
-            return;
-         end if;
-      end loop;
-
-      --  XXX precondition
-      raise Program_Error;
-   end Mark_Generated_Primitive_Complete;
-
-   procedure Mark_Generated_Primitive_Complete_2 (
       Obj      : in out Object_Type;
       Data_Idx :        Data_Index_Type;
       Success  :        Boolean)
@@ -220,6 +200,6 @@ is
       end if;
       Primitive.Success (Obj.Entries (Data_Idx).Prim, Success);
       Obj.Entries (Data_Idx).State := Complete;
-   end Mark_Generated_Primitive_Complete_2;
+   end Mark_Generated_Primitive_Complete;
 
 end CBE.Block_IO;

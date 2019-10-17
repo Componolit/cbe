@@ -1329,7 +1329,7 @@ is
       then
          raise Program_Error;
       end if;
-      Block_IO.Mark_Generated_Primitive_Complete_2 (
+      Block_IO.Mark_Generated_Primitive_Complete (
          Obj.IO_Obj, Data_Index, Success);
 
       Obj.Back_End_Req_Prim := Request_Primitive_Invalid;
