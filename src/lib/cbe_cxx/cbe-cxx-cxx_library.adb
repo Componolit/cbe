@@ -192,17 +192,18 @@ is
       Req := CXX_Request_From_SPARK (SPARK_Req);
    end Client_Data_Required;
 
-   function Supply_Client_Data (
-      Obj     : in out Library.Object_Type;
-      Now     :        Timestamp_Type;
-      Req     :        CXX_Request_Type;
-      Data    :        Block_Data_Type)
-   return CXX_Bool_Type
+   procedure Supply_Client_Data (
+      Obj      : in out Library.Object_Type;
+      Now      :        Timestamp_Type;
+      Req      :        CXX_Request_Type;
+      Data     :        Block_Data_Type;
+      Progress :    out CXX_Bool_Type)
    is
+      SPARK_Progress : Boolean;
    begin
-      return CXX_Bool_From_SPARK (
-         Library.Supply_Client_Data (
-            Obj, Now, CXX_Request_To_SPARK (Req), Data));
+      Library.Supply_Client_Data (
+         Obj, Now, CXX_Request_To_SPARK (Req), Data, SPARK_Progress);
+      Progress := CXX_Bool_From_SPARK (SPARK_Progress);
    end Supply_Client_Data;
 
    function Execute_Progress (Obj : Library.Object_Type)

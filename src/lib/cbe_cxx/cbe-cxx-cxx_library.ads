@@ -205,12 +205,12 @@ is
       Convention    => C,
       External_Name => "_ZN3Cbe7Library21_client_data_requiredERNS_7RequestE";
 
-   function Supply_Client_Data (
-      Obj     : in out Library.Object_Type;
-      Now     :        Timestamp_Type;
-      Req     :        CXX_Request_Type;
-      Data    :        Block_Data_Type)
-   return CXX_Bool_Type
+   procedure Supply_Client_Data (
+      Obj      : in out Library.Object_Type;
+      Now      :        Timestamp_Type;
+      Req      :        CXX_Request_Type;
+      Data     :        Block_Data_Type;
+      Progress :    out CXX_Bool_Type)
    with
       Export,
       Convention    => C,

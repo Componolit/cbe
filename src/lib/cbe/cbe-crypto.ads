@@ -57,10 +57,10 @@ is
    --
    --  Peek_Generated_Primitive
    --
-   function Peek_Generated_Primitive (
+   procedure Peek_Generated_Primitive (
       Obj      :     Object_Type;
-      Item_Idx : out Item_Index_Type)
-   return Primitive.Object_Type;
+      Item_Idx : out Item_Index_Type;
+      Prim     : out Primitive.Object_Type);
 
    --
    --  Drop_Generated_Primitive
