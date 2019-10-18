@@ -85,6 +85,15 @@ is
    return Boolean;
 
    --
+   --  Return active snapshot ids
+   --
+   --  \param reference to id array
+   --
+   procedure Active_Snapshot_Ids (
+      Obj     : in out Object_Type;
+      List    :    out Active_Snapshot_Ids_Type);
+
+   --
    --  Check if the CBE can accept a new requeust
    --
    --  \return true if a request can be accepted, otherwise false

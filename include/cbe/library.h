@@ -272,6 +272,13 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 	 */
 	bool snapshot_creation_complete(uint32_t id) const;
 
+	/**
+	 * Query list of active snapshots
+	 *
+	 * \param  ids  reference to destination buffer
+	 */
+	void active_snapshot_ids(Active_snapshot_ids &ids);
+
 	bool is_sealing_generation() const;
 	bool is_securing_superblock() const;
 

@@ -79,6 +79,14 @@ is
          Snapshot_ID_Type (Snap_id))));
    end Snapshot_Creation_Complete;
 
+   procedure Active_Snapshot_Ids (
+      Obj : in out Library.Object_Type;
+      Ids :    out Active_Snapshot_Ids_Type)
+   is
+   begin
+      Library.Active_Snapshot_Ids (Obj, Ids);
+   end Active_Snapshot_Ids;
+
    function Max_VBA (Obj : Library.Object_Type)
    return Virtual_Block_Address_Type
    is

@@ -121,6 +121,27 @@ is
    --     return Snap_Slot;
    --  end Superblock_Snapshot_Slot;
 
+   procedure Active_Snapshot_Ids (
+      Obj     : in out Object_Type;
+      List    :    out Active_Snapshot_Ids_Type)
+   is
+   begin
+      For_Snapshots :
+      for Snap_ID in Snapshots_Index_Type loop
+
+         if Snapshot_Valid (
+            Obj.Superblocks (Obj.Cur_SB).Snapshots (Snap_ID)) and then
+            Snapshot_Keep (
+               Obj.Superblocks (Obj.Cur_SB).Snapshots (Snap_ID))
+         then
+            List (Snap_ID) :=  Obj.Superblocks (
+               Obj.Cur_SB).Snapshots (Snap_ID).ID;
+         else
+            List (Snap_ID) := Snapshot_ID_Storage_Type (0);
+         end if;
+      end loop For_Snapshots;
+   end Active_Snapshot_Ids;
+
    procedure Initialize_Object (
       Obj     : out Object_Type;
       SBs     :     Superblocks_Type;
