@@ -78,11 +78,7 @@ is
    --
    --  Drop_Completed_Primitive
    --
-   procedure Drop_Completed_Primitive (
-      Obj  : in out Object_Type;
-      Prim :        Primitive.Object_Type)
-   with
-      Pre => (Primitive.Valid (Prim));
+   procedure Drop_Completed_Primitive (Obj : in out Object_Type);
 
    --
    --  Mark_Completed_Primitive

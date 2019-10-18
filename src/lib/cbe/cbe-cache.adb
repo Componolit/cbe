@@ -38,9 +38,9 @@ is
          Ts  : Timestamp_Type)
       is
       begin
-         State (Obj, Sta => Used);
-         Obj.PBA := PBA;
-         Obj.Ts  := Ts;
+         Obj.State := Used;
+         Obj.PBA   := PBA;
+         Obj.Ts    := Ts;
       end Initialize_Object;
 
       -----------------

@@ -89,12 +89,10 @@ is
    return CXX_Request_Type
    is (CXX_Request_From_SPARK (Library.Peek_Completed_Request (Obj)));
 
-   procedure Drop_Completed_Request (
-      Obj : in out Library.Object_Type;
-      Req :        CXX_Request_Type)
+   procedure Drop_Completed_Request (Obj : in out Library.Object_Type)
    is
    begin
-      Library.Drop_Completed_Request (Obj, CXX_Request_To_SPARK (Req));
+      Library.Drop_Completed_Request (Obj);
    end Drop_Completed_Request;
 
    procedure IO_Request_Completed (

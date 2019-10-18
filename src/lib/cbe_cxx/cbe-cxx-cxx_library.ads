@@ -117,14 +117,12 @@ is
       Convention    => C,
       External_Name => "_ZNK3Cbe7Library29peek_completed_client_requestEv";
 
-   procedure Drop_Completed_Request (
-      Obj : in out Library.Object_Type;
-      Req :        CXX_Request_Type)
+   procedure Drop_Completed_Request (Obj : in out Library.Object_Type)
    with
       Export,
       Convention    => C,
       External_Name =>
-         "_ZN3Cbe7Library29drop_completed_client_requestERKNS_7RequestE";
+         "_ZN3Cbe7Library29drop_completed_client_requestEv";
 
    procedure IO_Request_Completed (
       Obj        : in out Library.Object_Type;

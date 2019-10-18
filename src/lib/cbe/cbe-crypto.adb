@@ -178,9 +178,7 @@ is
    --
    --  Drop_Completed_Primitive
    --
-   procedure Drop_Completed_Primitive (
-      Obj  : in out Object_Type;
-      Prim :        Primitive.Object_Type)
+   procedure Drop_Completed_Primitive (Obj : in out Object_Type)
    is
    begin
       for Item_Id in Obj.Items'Range loop

@@ -99,9 +99,7 @@ is
    --  This method must only be called after executing
    --  'Peek_Completed_Request' returned a valid request.
    --
-   procedure Drop_Completed_Request (
-      Obj : in out Object_Type;
-      Req :        Request.Object_Type);
+   procedure Drop_Completed_Request (Obj : in out Object_Type);
 
    --
    --  Submit read request data from the backend block session to the CBE

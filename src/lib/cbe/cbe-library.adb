@@ -424,7 +424,7 @@ is
                not Request.Valid (Req) or else
                not Splitter.Request_Acceptable (Obj.Splitter_Obj);
 
-            Pool.Drop_Pending_Request (Obj.Request_Pool_Obj, Req);
+            Pool.Drop_Pending_Request (Obj.Request_Pool_Obj);
             Splitter.Submit_Request (Obj.Splitter_Obj, Req);
 
          end Declare_Req;
@@ -454,7 +454,7 @@ is
                exit Loop_Splitter_Generated_Prims;
             end if;
 
-            Splitter.Drop_Generated_Primitive (Obj.Splitter_Obj, Prim);
+            Splitter.Drop_Generated_Primitive (Obj.Splitter_Obj);
 
             --
             --  For every new Request, we have to use the currlently active
@@ -1056,7 +1056,7 @@ is
                   Obj.Write_Back_Obj, Prim, Obj.Write_Back_Data (Index));
 
             end Declare_Index_2;
-            Crypto.Drop_Completed_Primitive (Obj.Crypto_Obj, Prim);
+            Crypto.Drop_Completed_Primitive (Obj.Crypto_Obj);
 
          end Declare_Prim_12;
          Progress := True;
@@ -1258,11 +1258,9 @@ is
    return Request.Object_Type
    is (Pool.Peek_Completed_Request (Obj.Request_Pool_Obj));
 
-   procedure Drop_Completed_Request (
-      Obj : in out Object_Type;
-      Req :        Request.Object_Type)
+   procedure Drop_Completed_Request (Obj : in out Object_Type)
    is begin
-      Pool.Drop_Completed_Request (Obj.Request_Pool_Obj, Req);
+      Pool.Drop_Completed_Request (Obj.Request_Pool_Obj);
    end Drop_Completed_Request;
 
    --
@@ -1424,7 +1422,7 @@ is
             Crypto.Data_Index (Obj.Crypto_Obj, Prim));
 
          Data_Index_Valid := True;
-         Crypto.Drop_Completed_Primitive (Obj.Crypto_Obj, Prim);
+         Crypto.Drop_Completed_Primitive (Obj.Crypto_Obj);
          Pool.Mark_Completed_Primitive (Obj.Request_Pool_Obj, Prim);
 
          Obj.Front_End_Req_Prim := Request_Primitive_Invalid;
