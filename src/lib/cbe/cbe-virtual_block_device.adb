@@ -8,6 +8,8 @@
 
 pragma Ada_2012;
 
+with CBE.Debug;
+
 package body CBE.Virtual_Block_Device
 with SPARK_Mode
 is
@@ -254,11 +256,11 @@ is
    is (Obj.Execute_Progress);
 
    function To_String (Obj : Object_Type) return String
-   is
-   begin
-      return "VBD (Execute_Progress=" & CBE.To_String (Obj.Execute_Progress) &
-         ", Trans=" & Translation.To_String (Obj.Trans) &
-         ")";
-   end To_String;
+   is (
+      "VBD (Execute_Progress=" &
+      Debug.To_String (Obj.Execute_Progress) &
+      ", Trans=" &
+      Translation.To_String (Obj.Trans) &
+      ")");
 
 end CBE.Virtual_Block_Device;

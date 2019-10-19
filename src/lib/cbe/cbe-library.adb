@@ -9,6 +9,7 @@
 pragma Ada_2012;
 
 with CBE.Tree_Helper;
+with CBE.Debug;
 
 package body CBE.Library
 with SPARK_Mode
@@ -226,7 +227,7 @@ is
       Progress : Boolean := False;
    begin
 
-      Print_String (To_String (Obj));
+      pragma Debug (Debug.Print_String (To_String (Obj)));
 
       --------------------------
       --  Free-tree handling  --
@@ -1889,25 +1890,21 @@ is
 
    function To_String (Req_Prim : Request_Primitive_Type)
    return String
-   is
-   begin
-      return "Req_Prim (Req=" & Request.To_String (Req_Prim.Req) &
-         ", Prim="          & Primitive.To_String (Req_Prim.Prim) &
-         ", Tag="           & To_String (Req_Prim.Tag) &
-         ", In_Progress="   & To_String (Req_Prim.In_Progress) & ")";
-   end To_String;
+   is (
+      "Req_Prim (Req=" & Request.To_String (Req_Prim.Req) &
+      ", Prim="        & Primitive.To_String (Req_Prim.Prim) &
+      ", Tag="         & Debug.To_String (Req_Prim.Tag) &
+      ", In_Progress=" & Debug.To_String (Req_Prim.In_Progress) & ")");
 
    function To_String (Obj : Object_Type)
    return String
-   is
-   begin
-      return "CBE=(" &
-         ", Back_End_Req_Prim="  & To_String (Obj.Back_End_Req_Prim) &
-         ", Front_End_Req_Prim=" & To_String (Obj.Front_End_Req_Prim) &
-         ", VBD="                & Virtual_Block_Device.To_String (Obj.VBD) &
-         ", Superblock_Dirty="   & CBE.To_String (Obj.Superblock_Dirty) &
-         ", Secure_Superblock="  & CBE.To_String (Obj.Secure_Superblock) &
-         ")";
-   end To_String;
+   is (
+      "CBE=(" &
+      ", Back_End_Req_Prim="  & To_String (Obj.Back_End_Req_Prim) &
+      ", Front_End_Req_Prim=" & To_String (Obj.Front_End_Req_Prim) &
+      ", VBD="                & Virtual_Block_Device.To_String (Obj.VBD) &
+      ", Superblock_Dirty="   & Debug.To_String (Obj.Superblock_Dirty) &
+      ", Secure_Superblock="  & Debug.To_String (Obj.Secure_Superblock) &
+      ")");
 
 end CBE.Library;

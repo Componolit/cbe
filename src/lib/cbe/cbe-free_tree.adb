@@ -237,10 +237,6 @@ is
             not Translation.Acceptable (Obj.Trans) or else
             not Primitive.Valid (Obj.Curr_Query_Prim);
 
-         --  Print_String ("FRTR Execute trans submit: ");
-         --  Print_Primitive (Obj.Curr_Query_Prim);
-         --  Print_Line_Break;
-
          Translation.Submit_Primitive (
             Obj.Trans, Obj.Root_PBA, Obj.Root_Gen, Obj.Root_Hash,
             Obj.Curr_Query_Prim);
