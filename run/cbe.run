@@ -64,7 +64,7 @@ append config {
 	<start name="report_rom">
 		<resource name="RAM" quantum="32M"/>
 		<provides> <service name="Report"/> <service name="ROM"/> </provides>
-		<config verbose="yes"/>
+		<config verbose="no"/>
 	</start>
 
 	<start name="log_terminal">
@@ -79,9 +79,9 @@ append config {
 			report="no"
 			verbose="no"
 			backing_size="} [cbe_block_size_mb] {M"
-			vbd_size="2M"
+			vbd_size="32M"
 			vbd_outer_degree="64"
-			ft_size="1M"
+			ft_size="4M"
 			ft_outer_degree="64"
 			initialize="yes"
 			write_init_state_to_block="}
@@ -103,7 +103,7 @@ append config {"/>
 	<start name="cbe">
 		<resource name="RAM" quantum="4M"/>
 		<provides><service name="Block"/></provides>
-		<config show_progress="no" sync_interval="1" secure_interval="10"/>
+		<config show_progress="no" sync_interval="2" secure_interval="600"/>
 		<route>
 			<service name="Block"> <child name="cbe_block"/> </service>
 			<service name="Terminal"> <child name="log_terminal"/> </service>
@@ -128,8 +128,8 @@ append config {
 		<resource name="RAM" quantum="80M"/>
 		<config verbose="yes" report="no" log="yes" stop_on_error="yes">
 			<tests>
-				<compare verbose="yes" length="128K" size="4K"/>
-				<compare verbose="yes" length="128K" size="4K"/>
+				<compare verbose="yes" length="4M" size="4K"/>
+				<compare verbose="yes" length="4M" size="4K"/>
 
 <!--
 				<replay verbose="yes" bulk="no"> <request type="read"  lba="0" count="1"/> </replay>
@@ -243,7 +243,6 @@ append config {
 				<replay verbose="yes" bulk="no">
 					<request type="read"  lba="0" count="512"/>
 				</replay>
-<!--
 				<replay verbose="yes" bulk="no"> <request type="read"  lba="0" count="1"/> </replay>
 				<replay verbose="yes" bulk="no"> <request type="write" lba="0" count="1"/> </replay>
 				<replay verbose="yes" bulk="no"> <request type="write" lba="0" count="1"/> </replay>
@@ -259,6 +258,9 @@ append config {
 				<replay verbose="yes" bulk="no"> <request type="write" lba="0" count="1"/> </replay>
 				<replay verbose="yes" bulk="no"> <request type="write" lba="0" count="1"/> </replay>
 				<replay verbose="yes" bulk="no"> <request type="write" lba="0" count="1"/> </replay>
+				<replay verbose="yes" bulk="no">
+					<request type="read"  lba="0" count="512"/>
+				</replay>
 				<replay verbose="yes" bulk="no"> <request type="write" lba="5" count="1"/> </replay>
 				<replay verbose="yes" bulk="no"> <request type="write" lba="5" count="1"/> </replay>
 				<replay verbose="yes" bulk="no"> <request type="write" lba="5" count="1"/> </replay>
@@ -266,7 +268,13 @@ append config {
 				<replay verbose="yes" bulk="no"> <request type="write" lba="0" count="1"/> </replay>
 				<replay verbose="yes" bulk="no"> <request type="write" lba="0" count="1"/> </replay>
 				<replay verbose="yes" bulk="no"> <request type="write" lba="0" count="1"/> </replay>
+				<replay verbose="yes" bulk="no">
+					<request type="read"  lba="0" count="512"/>
+				</replay>
 				<replay verbose="yes" bulk="no"> <request type="write" lba="0" count="1"/> </replay>
+				<replay verbose="yes" bulk="no">
+					<request type="write"  lba="2048" count="1024"/>
+				</replay>
 				<replay verbose="yes" bulk="no"> <request type="write" lba="0" count="1"/> </replay>
 				<replay verbose="yes" bulk="no"> <request type="write" lba="0" count="1"/> </replay>
 				<replay verbose="yes" bulk="no"> <request type="write" lba="0" count="1"/> </replay>
@@ -285,6 +293,7 @@ append config {
 				<sequential length="1M" size="16K"/>
 				<sequential length="1M" size="64K"/>
 				<sequential length="1M" size="128K"/>
+<!--
 				<sequential length="1M" size="4K" synchronous="yes" write="yes"/>
 				<sequential length="1M" size="64K" write="yes" synchronous="yes"/>
 -->
@@ -363,4 +372,4 @@ if {[write_init_state_to_lx_file]} {
 
 append qemu_args " -nographic -m 1280 "
 
-run_genode_until {.*child "block_tester" exited with exit value 0.*\n} 240
+run_genode_until {.*child "block_tester" exited with exit value 0.*\n} 600
