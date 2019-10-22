@@ -72,7 +72,7 @@ is
    procedure Create_Snapshot (
       Obj     : in out Object_Type;
       Quara   :        Boolean;
-      Snap_id :    out Snapshot_ID_Type);
+      Snap_ID :    out Snapshot_ID_Type);
 
    --
    --  Check if snapshot creation is complete
@@ -81,7 +81,7 @@ is
    --
    function Snapshot_Creation_Complete (
       Obj     : Object_Type;
-      Snap_id : Snapshot_ID_Type)
+      Snap_ID : Snapshot_ID_Type)
    return Boolean;
 
    --
@@ -382,6 +382,9 @@ private
       Superblock_Dirty        : Boolean;
       Front_End_Req_Prim      : Request_Primitive_Type;
       Back_End_Req_Prim       : Request_Primitive_Type;
+      Creating_Snapshot       : Boolean;
+      Creating_Quaratine_Snapshot : Boolean;
+      Next_Snapshot_Id        : Snapshot_ID_Type;
    end record;
 
    procedure Discard_Snapshot (
@@ -396,6 +399,10 @@ private
 
    function Next_Snap_Slot (Obj : Object_Type)
    return Snapshots_Index_Type;
+
+   procedure Create_Snapshot_Internal (
+      Obj      : in out Object_Type;
+      Progress :    out Boolean);
 
    procedure Create_New_Snapshot (
       Obj  : in out Object_Type;
