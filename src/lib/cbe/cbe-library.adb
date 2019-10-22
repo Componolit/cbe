@@ -256,10 +256,10 @@ is
          Write_Back.Peek_Completed_Root (Obj.Write_Back_Obj, Prim);
    begin
       --  FIXME why do we need that again?
-      if Snap.PBA /= PBA then
-         Snap.Gen := Obj.Cur_Gen;
-         Snap.PBA := PBA;
-      end if;
+      --  if Snap.PBA /= PBA then
+      Snap.Gen := Obj.Cur_Gen;
+      Snap.PBA := PBA;
+      --  end if;
       Write_Back.Peek_Completed_Root_Hash (
          Obj.Write_Back_Obj, Prim, Snap.Hash);
 
