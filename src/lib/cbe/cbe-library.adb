@@ -685,6 +685,22 @@ is
 
             Splitter.Drop_Generated_Primitive (Obj.Splitter_Obj);
 
+            Debug.Print_String ("Virtual_Block_Device: prim: "
+               & Primitive.To_String (Prim) & " "
+               & "SB: " & Debug.To_String (Debug.Uint64_Type (Obj.Cur_SB))
+               & " SN: " & Debug.To_String (Debug.Uint64_Type (
+                  Obj.Superblocks (Obj.Cur_SB).Curr_Snap))
+               & " " & Debug.To_String (Debug.Uint64_Type (
+                  Obj.Superblocks (Obj.Cur_SB).Snapshots (
+                     Curr_Snap (Obj)).PBA)) & " "
+               & Debug.To_String (Debug.Uint64_Type (
+                  Obj.Superblocks (Obj.Cur_SB).Snapshots (
+                     Curr_Snap (Obj)).Gen)) & " "
+               & Debug.To_String (
+                  Obj.Superblocks (Obj.Cur_SB).Snapshots (
+                     Curr_Snap (Obj)).Hash) & " "
+               );
+
             --
             --  For every new Request, we have to use the currlently active
             --  snapshot as a previous Request may have changed the tree.
@@ -1198,6 +1214,39 @@ is
                      Obj.Last_Snapshot_ID)));
                Obj.Superblock_Dirty  := False;
                Obj.Secure_Superblock := False;
+
+               Debug.Print_String ("-------------------- SB SECURED -----");
+
+               for J in Superblocks_Index_Type loop
+                  if J = Obj.Cur_SB then
+                     Debug.Print_String ("--- CURRENT ---");
+                  end if;
+                  Debug.Print_String ("SB: " & Debug.To_String (
+                     Debug.Uint64_Type (J)) & " "
+                     & " Curr_Snap: " & Debug.To_String (Debug.Uint64_Type (
+                        Obj.Superblocks (J).Curr_Snap)));
+                  for I in Snapshots_Index_Type loop
+                     if Snapshot_Valid (Obj.Superblocks (J).Snapshots (I))
+                     then
+                        Debug.Print_String ("SB: "
+                           & Debug.To_String (Debug.Uint64_Type (J)) & " "
+                           & "SN: "
+                           & Debug.To_String (Debug.Uint64_Type (I)) & " "
+                           & "PBA: "
+                           & Debug.To_String (Debug.Uint64_Type (
+                              Obj.Superblocks (J).Snapshots (I).PBA)) & " "
+                           & "GEN: "
+                           & Debug.To_String (Debug.Uint64_Type (
+                              Obj.Superblocks (J).Snapshots (I).Gen)) & " "
+                           & "KEEP: "
+                           & Debug.To_String (Debug.Uint64_Type (
+                              Obj.Superblocks (J).Snapshots (I).Flags)) & " "
+                           & Debug.To_String (
+                              Obj.Superblocks (J).Snapshots (I).Hash) & " "
+                           );
+                     end if;
+                  end loop;
+               end loop;
 
             end Declare_Next_SB;
             Sync_Superblock.Drop_Completed_Primitive (Obj.Sync_SB_Obj, Prim);
