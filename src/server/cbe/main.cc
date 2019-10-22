@@ -207,6 +207,8 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 		Time::Timestamp _last_sync_time;
 		Time::Timestamp _last_secure_time;
 
+		uint32_t _creating_snapshot_id { 0 };
+
 		void _handle_requests()
 		{
 			if (!_block_session.constructed()) { return; }
@@ -292,7 +294,37 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 				/*
 				 * Query current time and check if a timeout has triggered
 				 */
+#define CREATE_SNAP
+#if defined(CREATE_SNAP)
+				Time::Timestamp const now = _time.timestamp();
+				if (now - _last_sync_time >= _sync_interval && !_creating_snapshot_id)
+				{
+					if (_cbe->cache_dirty()) {
+						// Genode::log ("\033[93;44m", __Func__, " SEAL current generation: ", Obj.Cur_Gen);
+						_creating_snapshot_id = _cbe->create_snapshot(false);
+						log("\033[36;1m INF ", "CREATING SNAPSHOT: ",
+						    _creating_snapshot_id);
+					} else {
+						log("\033[36;1m INF ", "ARM SNAPSHOT TRIGGER");
+						// DBG("Cache is not dirty, re-arm trigger");
+						_last_sync_time = now;
+						_time.schedule_sync_timeout(_sync_interval);
+					}
+				}
 
+				if (_creating_snapshot_id) {
+					if (_cbe->snapshot_creation_complete(_creating_snapshot_id)) {
+						log("\033[36;1m INF ", "CREATING SNAPSHOT: ",
+						    _creating_snapshot_id, " FINISHED");
+						_creating_snapshot_id = 0;
+						_last_sync_time = now;
+						_time.schedule_sync_timeout(_sync_interval);
+					} else {
+						log("\033[36;1m INF ", "CREATING SNAPSHOT: ",
+						    _creating_snapshot_id, " PENDING");
+					}
+				}
+#else
 				/*
 				 * Seal the current generation if sealing is not already
 				 * in Progress. In case no write operation was performed just set
@@ -345,10 +377,12 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 						_last_secure_time = now;
 					}
 				}
+#endif
 
 				_cbe->execute(_io_buf, _crypto_plain_buf, _crypto_cipher_buf, now);
 				progress |= _cbe->execute_progress();
 
+#if !defined(CREATE_SNAP)
 				/* if sealing has finished during 'execute', set new timeout */
 				if (is_sealing_generation && !_cbe->is_sealing_generation()) {
 					/*
@@ -369,6 +403,7 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 					_last_secure_time = now;
 					_time.schedule_secure_timeout(_secure_interval);
 				}
+#endif
 
 				using Payload = Block::Request_stream::Payload;
 
