@@ -6,8 +6,9 @@ RW_TEST=0
 KEY_TEST=1
 INFO_TEST=1
 CREATE_SNAPSHOT_TEST=1
+CREATE_SNAPSHOT_DIRTY_TEST=1
 WRITE_1_BLOCK_TEST=0
-WRITE_CREATE_TEST=1
+WRITE_CREATE_TEST=0
 
 test_key() {
 	echo "Write key to CBE"
@@ -70,6 +71,14 @@ main() {
 		test_create_snapshot
 	fi
 
+	if [ $CREATE_SNAPSHOT_DIRTY_TEST -eq 1 ]; then
+		test_create_snapshot
+		test_write_1 "$data_file" "$((512 * 1024 / 4096))"
+		test_create_snapshot
+		test_write_1 "$data_file" "$((128 * 1024 / 4096))"
+		test_create_snapshot
+	fi
+
 	if [ $RW_TEST -eq 1 ]; then
 		test_rw "$data_file"
 	fi
@@ -83,6 +92,9 @@ main() {
 		test_create_snapshot
 		test_info
 	fi
+
+	ls -l /dev/cbe/snapshots
+	ls -l /dev/cbe/snapshots/3
 }
 
 main "$@"
