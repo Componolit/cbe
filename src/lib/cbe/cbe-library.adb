@@ -86,6 +86,7 @@ is
       Snap_ID :    out Snapshot_ID_Type)
    is
    begin
+
       --
       --  As long as we are creating a snapshot or
       --  the superblock the new snapshot belongs to is being
@@ -95,12 +96,20 @@ is
       if not Obj.Creating_Snapshot or else
          not Obj.Secure_Superblock
       then
+         if not Cache_Dirty (Obj) then
+            Debug.Print_String ("Creating_Snapshot: not dirty no SN neede: " &
+               Debug.To_String (Debug.Uint64_Type (Obj.Last_Snapshot_ID)));
+            Snap_ID := Obj.Last_Snapshot_ID;
+            return;
+         end if;
+
          Obj.Creating_Snapshot := True;
          Obj.Creating_Quaratine_Snapshot := Quara;
          Obj.Next_Snapshot_Id := Obj.Last_Snapshot_ID + 1;
+         Debug.Print_String ("Creating_Snapshot: id: " &
+            Debug.To_String (Debug.Uint64_Type (Obj.Next_Snapshot_Id)));
       end if;
-
-      Debug.Print_String ("Creating_Snapshot: id: " &
+      Debug.Print_String ("Creating_Snapshot: old id: " &
          Debug.To_String (Debug.Uint64_Type (Obj.Next_Snapshot_Id)));
 
       Snap_ID := Obj.Next_Snapshot_Id;
@@ -111,14 +120,22 @@ is
       Progress :    out Boolean)
    is
    begin
+      Delcare_Cache_Flusher_Active :
+      declare
+         Cache_Flusher_Active : constant Boolean :=
+            Cache_Flusher.Active (Obj.Cache_Flusher_Obj);
+      begin
+         if Cache_Flusher_Active or else Obj.Secure_Superblock then
+            Debug.Print_String ("Create_Snapshot_Internal: "
+                & "flusher active: " & Debug.To_String (Cache_Flusher_Active)
+                & " Secure_Superblock: "
+                & Debug.To_String (Obj.Secure_Superblock));
+            Progress := False;
+            return;
+         end if;
+      end Delcare_Cache_Flusher_Active;
+      Debug.Print_String ("Create_Snapshot_Internal: attempt to create");
 
-      if Cache_Flusher.Active (Obj.Cache_Flusher_Obj) or else
-         Obj.Secure_Superblock
-      then
-         Debug.Print_String ("Create_Snapshot_Internal flusher active");
-         Progress := False;
-         return;
-      end if;
       Declare_Cache_Dirty :
       declare
          Cache_Dirty : Boolean := False;
@@ -142,13 +159,19 @@ is
          --  finished doing that.
          --
          if not Cache_Dirty then
+            Debug.Print_String ("Create_Snapshot_Internal snapshot created: "
+               & "gen: " & Debug.To_String (Debug.Uint64_Type (Obj.Cur_Gen)));
 
+            Obj.Superblocks (Obj.Cur_SB).Snapshots (
+               Curr_Snap (Obj)).Flags := (
+                  if Obj.Creating_Quaratine_Snapshot then 1 else 0);
             Obj.Cur_Gen := Obj.Cur_Gen  + 1;
+            Obj.Creating_Snapshot := False;
             Obj.Secure_Superblock := True;
+         else
+            Debug.Print_String ("Create_Snapshot_Internal: cache dirty"
+               & " wait for flusher");
          end if;
-         Debug.Print_String ("Create_Snapshot_Internal snapshot created: "
-            & "gen: " & Debug.To_String (Debug.Uint64_Type (Obj.Cur_Gen)));
-
          Progress := True;
       end Declare_Cache_Dirty;
    end Create_Snapshot_Internal;
@@ -201,8 +224,14 @@ is
             Snapshot_Keep (
                Obj.Superblocks (Obj.Cur_SB).Snapshots (Snap_ID))
          then
-            List (Snap_ID) :=  Obj.Superblocks (
-               Obj.Cur_SB).Snapshots (Snap_ID).ID;
+            List (Snap_ID) := Snapshot_ID_Storage_Type (Obj.Superblocks (
+               Obj.Cur_SB).Snapshots (Snap_ID).Gen);
+
+            Debug.Print_String ("Active_Snapshot_Ids: "
+               & "slot: "
+               & Debug.To_String (Debug.Uint64_Type (Snap_ID))
+               & " id: "
+               & Debug.To_String (Debug.Uint64_Type (List (Snap_ID))));
          else
             List (Snap_ID) := Snapshot_ID_Storage_Type (0);
          end if;
@@ -412,6 +441,8 @@ is
       -------------------------
 
       if Obj.Creating_Snapshot then
+         Debug.Print_String ("Creating_Snapshot: " &
+            Debug.To_String (Obj.Creating_Snapshot));
          Create_Snapshot_Internal (Obj, Progress);
       end if;
 
@@ -1217,7 +1248,6 @@ is
 
                Obj.Superblock_Dirty  := False;
                Obj.Secure_Superblock := False;
-               Obj.Creating_Snapshot := False;
 
                Debug.Print_String ("-------------------- SB SECURED -----");
 
@@ -1242,6 +1272,9 @@ is
                            & "GEN: "
                            & Debug.To_String (Debug.Uint64_Type (
                               Obj.Superblocks (J).Snapshots (I).Gen)) & " "
+                           & "ID: "
+                           & Debug.To_String (Debug.Uint64_Type (
+                              Obj.Superblocks (J).Snapshots (I).ID)) & " "
                            & "KEEP: "
                            & Debug.To_String (Debug.Uint64_Type (
                               Obj.Superblocks (J).Snapshots (I).Flags)) & " "
