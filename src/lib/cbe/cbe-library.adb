@@ -142,50 +142,8 @@ is
          --  finished doing that.
          --
          if not Cache_Dirty then
-            --
-            --  Look for a new snapshot slot. If we cannot find one
-            --  we manual intervention b/c there are too many snapshots
-            --  flagged as keep
-            --
-            Declare_Next_Snap_2 :
-            declare
-               Next_Snap : constant Snapshots_Index_Type :=
-                  Next_Snap_Slot (Obj);
-            begin
 
-               --
-               --  Could not find free slots, we need to discard some
-               --  quarantine snapshots, user intervention needed.
-               --
-               if Next_Snap = Curr_Snap (Obj) then
-                  raise Program_Error;
-               end if;
-
-               Declare_Tree :
-               declare
-                  Tree : constant Tree_Helper.Object_Type :=
-                     Virtual_Block_Device.Get_Tree_Helper (Obj.VBD);
-               begin
-                  Obj.Superblocks (Obj.Cur_SB).Snapshots (
-                     Next_Snap).Height := Tree_Helper.Height (Tree);
-                  Obj.Superblocks (Obj.Cur_SB).Snapshots (
-                     Next_Snap).Nr_Of_Leafs := Tree_Helper.Leafs (Tree);
-               end Declare_Tree;
-
-               Obj.Superblocks (Obj.Cur_SB).Snapshots (Next_Snap).Gen :=
-                  Obj.Cur_Gen;
-               Obj.Superblocks (Obj.Cur_SB).Snapshots (Next_Snap).ID :=
-                  Snapshot_ID_Storage_Type (Obj.Next_Snapshot_Id);
-
-               Obj.Superblocks (Obj.Cur_SB).Snapshots (Next_Snap).Valid := 1;
-               Obj.Superblocks (Obj.Cur_SB).Curr_Snap :=
-                  Snapshots_Index_Storage_Type (Next_Snap);
-
-            end Declare_Next_Snap_2;
-
-            Debug.Print_String ("FOOOO");
             Obj.Cur_Gen := Obj.Cur_Gen  + 1;
-            Obj.Creating_Snapshot := False;
             Obj.Secure_Superblock := True;
          end if;
          Debug.Print_String ("Create_Snapshot_Internal snapshot created: "
@@ -1212,8 +1170,54 @@ is
                   & "Last_Snapshot_ID: "
                   & Debug.To_String (Debug.Uint64_Type (
                      Obj.Last_Snapshot_ID)));
+
+               --
+               --  Look for a new snapshot slot. If we cannot find one
+               --  we manual intervention b/c there are too many snapshots
+               --  flagged as keep
+               --
+               Declare_Next_Snap_2 :
+               declare
+                  Next_Snap : constant Snapshots_Index_Type :=
+                     Next_Snap_Slot (Obj);
+               begin
+
+                  --
+                  --  Could not find free slots, we need to discard some
+                  --  quarantine snapshots, user intervention needed.
+                  --
+                  if Next_Snap = Curr_Snap (Obj) then
+                     raise Program_Error;
+                  end if;
+
+                  Declare_Tree :
+                  declare
+                     Tree : constant Tree_Helper.Object_Type :=
+                        Virtual_Block_Device.Get_Tree_Helper (Obj.VBD);
+                  begin
+                     Obj.Superblocks (Obj.Cur_SB).Snapshots (
+                        Next_Snap).Height := Tree_Helper.Height (Tree);
+                     Obj.Superblocks (Obj.Cur_SB).Snapshots (
+                        Next_Snap).Nr_Of_Leafs := Tree_Helper.Leafs (Tree);
+                  end Declare_Tree;
+
+                  Obj.Superblocks (Obj.Cur_SB).Snapshots (Next_Snap) :=
+                  Obj.Superblocks (Obj.Cur_SB).Snapshots (Curr_Snap (Obj));
+
+                  Obj.Superblocks (Obj.Cur_SB).Snapshots (Next_Snap).Gen :=
+                     Obj.Cur_Gen;
+                  Obj.Superblocks (Obj.Cur_SB).Snapshots (Next_Snap).ID :=
+                     Snapshot_ID_Storage_Type (Obj.Next_Snapshot_Id);
+
+                  Obj.Superblocks (Obj.Cur_SB).Snapshots (
+                     Next_Snap).Valid := 1;
+                  Obj.Superblocks (Obj.Cur_SB).Curr_Snap :=
+                     Snapshots_Index_Storage_Type (Next_Snap);
+               end Declare_Next_Snap_2;
+
                Obj.Superblock_Dirty  := False;
                Obj.Secure_Superblock := False;
+               Obj.Creating_Snapshot := False;
 
                Debug.Print_String ("-------------------- SB SECURED -----");
 
