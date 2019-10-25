@@ -1394,81 +1394,14 @@ class Vfs_cbe::Snapshot_file_system : private Snapshot_local_factory,
 };
 
 
-#if 0
-struct Vfs_cbe::Snapshots_local_factory : File_system_factory
-{
-	Snapshot_file_system _snapshot_fs;
-
-	Snapshots_local_factory(Vfs::Env          &env,
-	                        Xml_node           config,
-	                        Wrapper       &w)
-	: _snapshot_fs(env, config, w, true)
-	{ }
-
-	Vfs::File_system *create(Vfs::Env&, Xml_node node) override
-	{
-		ERR("Snapshots_local_factory node: ", node);
-
-		if (node.has_type(Snapshot_file_system::type_name())) {
-			return &_snapshot_fs;
-		}
-
-		return nullptr;
-	}
-};
-
-
-class Vfs_cbe::Snapshots_file_system : private Snapshots_local_factory,
-                                       public Vfs::Dir_file_system
-{
-	private:
-
-		typedef String<8192> Config;
-
-		static Config _config(Xml_node node)
-		{
-			char buf[Config::capacity()] { };
-
-			Xml_generator xml(buf, sizeof(buf), "dir", [&] () {
-				xml.attribute("name", "snapshots");
-
-				xml.node("snapshot", [&] () {
-					xml.attribute("name", 42);
-				});
-			});
-
-			Genode::log("Snapshots_file_system:\n", (char const *) buf);
-			return Config(Cstring(buf));
-		}
-
-	public:
-
-		Snapshots_file_system(Vfs::Env         &vfs_env,
-		                      Genode::Xml_node  node,
-		                      Wrapper      &cbe)
-		:
-			Snapshots_local_factory(vfs_env, node, cbe),
-			Vfs::Dir_file_system(vfs_env, Xml_node(_config(node).string()),
-			                     *this)
-		{ }
-
-		static char const *type_name() { return "snapshots"; }
-
-		char const *type() override { return type_name(); }
-};
-#endif
-
-
 class Vfs_cbe::Snapshots_file_system : public Vfs::File_system
 {
 	private:
 
 		Vfs::Env &_vfs_env;
 
-		bool _root(const char *path)
-		{
-			return strcmp(path, "/snapshots") == 0;
-		}
+		bool _root_dir(char const *path) { return strcmp(path, "/snapshots") == 0; }
+		bool _top_dir(char const *path) { return strcmp(path, "/") == 0; }
 
 		struct Snapshot_registry
 		{
@@ -1728,7 +1661,7 @@ class Vfs_cbe::Snapshots_file_system : public Vfs::File_system
 			}
 
 			bool const root = strcmp(path, "/") == 0;
-			if (_root(path) || root) {
+			if (_root_dir(path) || root) {
 
 				_snap_reg.update(_vfs_env);
 
@@ -1749,19 +1682,27 @@ class Vfs_cbe::Snapshots_file_system : public Vfs::File_system
 
 		Stat_result stat(char const *path, Stat &out_stat) override
 		{
-			ERR("path: '", path, "'");
 			out_stat = Stat();
+			path = _sub_path(path);
 
-			if (_root(path) || strcmp(path, "/") == 0) {
+			/* path does not match directory name */
+			if (!path)
+				return STAT_ERR_NO_ENTRY;
+
+			/*
+			 *              * If path equals directory name, return information about the
+			 *                           * current directory.
+			 *                                        */
+			if (strlen(path) == 0 || _top_dir(path)) {
 				out_stat.size   = 0;
-				out_stat.mode   = STAT_MODE_DIRECTORY | 0700;
+				out_stat.mode   = STAT_MODE_DIRECTORY | 0755;
+				out_stat.uid    = 0;
+				out_stat.gid    = 0;
 				out_stat.inode  = 1;
 				out_stat.device = (Genode::addr_t)this;
-				ERR("path: '", path, "'");
 				return STAT_OK;
 			}
 
-			path = _sub_path(path);
 			if (!path || path[0] != '/') {
 				ERR("path: '", path, "'");
 				return STAT_ERR_NO_ENTRY;
@@ -1775,6 +1716,7 @@ class Vfs_cbe::Snapshots_file_system : public Vfs::File_system
 			Snapshot_file_system &fs = _snap_reg.by_id(id);
 			ERR("sub path: '", path, "'");
 			return fs.stat(path, out_stat);
+
 		}
 
 		Unlink_result unlink(char const *path)
@@ -1822,7 +1764,7 @@ class Vfs_cbe::Snapshots_file_system : public Vfs::File_system
 			Snapshot_file_system &fs = _snap_reg.by_id(id);
 			char const *leaf_path = fs.leaf_path(path);
 			if (leaf_path) {
-				ERR("sub path: '", path, "'", " leaf_path: ", leaf_path);
+				ERR("sub path: '", path, "'", " leaf_path: '", leaf_path, "'");
 				return leaf_path;
 			}
 
