@@ -132,11 +132,13 @@ is
 
    procedure Submit_Request (
       Obj : in out Library.Object_Type;
-      Req :        CXX_Request_Type)
+      Req :        CXX_Request_Type;
+      ID  :        CXX_Snapshot_ID_Type)
    with
       Export,
       Convention    => C,
-      External_Name => "_ZN3Cbe7Library21submit_client_requestERKNS_7RequestE";
+      External_Name =>
+         "_ZN3Cbe7Library21submit_client_requestERKNS_7RequestEj";
 
    function Peek_Completed_Request (Obj : Library.Object_Type)
    return CXX_Request_Type

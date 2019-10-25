@@ -335,6 +335,24 @@ is
    return Snapshots_Index_Type
    is (Snapshots_Index_Type (Obj.Superblocks (Obj.Cur_SB).Curr_Snap));
 
+   function Snap_Slot_For_ID (
+      Obj : Object_Type;
+      ID  : Snapshot_ID_Type)
+   return Snapshots_Index_Type
+   is
+   begin
+      for I in Snapshots_Index_Type loop
+         if Snapshot_Valid (Obj.Superblocks (Obj.Cur_SB).
+            Snapshots (I)) and then
+            Obj.Superblocks (Obj.Cur_SB).Snapshots (I).Gen =
+               Generation_Type (ID)
+         then
+            return I;
+         end if;
+      end loop;
+      raise Program_Error;
+   end Snap_Slot_For_ID;
+
    function Next_Snap_Slot (Obj : Object_Type)
    return Snapshots_Index_Type
    is
@@ -414,11 +432,13 @@ is
       PBA : constant Physical_Block_Address_Type :=
          Write_Back.Peek_Completed_Root (Obj.Write_Back_Obj, Prim);
    begin
-      --  FIXME why do we need that again?
-      --  if Snap.PBA /= PBA then
       Snap.Gen := Obj.Cur_Gen;
       Snap.PBA := PBA;
-      --  end if;
+
+      Debug.Print_String ("Update_Snapshot_Hash: "
+         & "PBA: " & Debug.To_String (Debug.Uint64_Type (Snap.PBA)) & " "
+         & "GEN: " & Debug.To_String (Debug.Uint64_Type (Snap.Gen)) & " ");
+
       Write_Back.Peek_Completed_Root_Hash (
          Obj.Write_Back_Obj, Prim, Snap.Hash);
 
@@ -641,8 +661,14 @@ is
                not Request.Valid (Req) or else
                not Splitter.Request_Acceptable (Obj.Splitter_Obj);
 
-            Pool.Drop_Pending_Request (Obj.Request_Pool_Obj);
-            Splitter.Submit_Request (Obj.Splitter_Obj, Req);
+            Declare_Pool_Req_ID :
+            declare
+               Snap_ID : constant Snapshot_ID_Type :=
+                  Pool.Snap_ID_For_Request (Obj.Request_Pool_Obj, Req);
+            begin
+               Pool.Drop_Pending_Request (Obj.Request_Pool_Obj);
+               Splitter.Submit_Request (Obj.Splitter_Obj, Req, Snap_ID);
+            end Declare_Pool_Req_ID;
 
          end Declare_Req;
          Progress := True;
@@ -656,8 +682,11 @@ is
       loop
          Declare_Prim_3 :
          declare
+            Snap_Slot_Index : Snapshots_Index_Type := 0;
             Prim : constant Primitive.Object_Type :=
                Splitter.Peek_Generated_Primitive (Obj.Splitter_Obj);
+            Snap_ID : constant Snapshot_ID_Type :=
+               Splitter.Peek_Generated_Primitive_ID (Obj.Splitter_Obj);
          begin
             exit Loop_Splitter_Generated_Prims when
                not Primitive.Valid (Prim) or else
@@ -674,6 +703,15 @@ is
 
             Splitter.Drop_Generated_Primitive (Obj.Splitter_Obj);
 
+            Debug.Print_String ("Snap_ID: "
+               & Debug.To_String (Debug.Uint64_Type (Snap_ID)));
+
+            if Snap_ID /= 0 then
+               Snap_Slot_Index := Snap_Slot_For_ID (Obj, Snap_ID);
+            else
+               Snap_Slot_Index := Curr_Snap (Obj);
+            end if;
+
             Debug.Print_String ("Virtual_Block_Device: prim: "
                & Primitive.To_String (Prim) & " "
                & "SB: " & Debug.To_String (Debug.Uint64_Type (Obj.Cur_SB))
@@ -681,13 +719,13 @@ is
                   Obj.Superblocks (Obj.Cur_SB).Curr_Snap))
                & " " & Debug.To_String (Debug.Uint64_Type (
                   Obj.Superblocks (Obj.Cur_SB).Snapshots (
-                     Curr_Snap (Obj)).PBA)) & " "
+                     Snap_Slot_Index).PBA)) & " "
                & Debug.To_String (Debug.Uint64_Type (
                   Obj.Superblocks (Obj.Cur_SB).Snapshots (
-                     Curr_Snap (Obj)).Gen)) & " "
+                     Snap_Slot_Index).Gen)) & " "
                & Debug.To_String (
                   Obj.Superblocks (Obj.Cur_SB).Snapshots (
-                     Curr_Snap (Obj)).Hash) & " "
+                     Snap_Slot_Index).Hash) & " "
                );
 
             --
@@ -696,9 +734,9 @@ is
             --
             Virtual_Block_Device.Submit_Primitive (
                Obj.VBD,
-               Obj.Superblocks (Obj.Cur_SB).Snapshots (Curr_Snap (Obj)).PBA,
-               Obj.Superblocks (Obj.Cur_SB).Snapshots (Curr_Snap (Obj)).Gen,
-               Obj.Superblocks (Obj.Cur_SB).Snapshots (Curr_Snap (Obj)).Hash,
+               Obj.Superblocks (Obj.Cur_SB).Snapshots (Snap_Slot_Index).PBA,
+               Obj.Superblocks (Obj.Cur_SB).Snapshots (Snap_Slot_Index).Gen,
+               Obj.Superblocks (Obj.Cur_SB).Snapshots (Snap_Slot_Index).Hash,
                Prim);
 
          end Declare_Prim_3;
@@ -1594,12 +1632,16 @@ is
 
    procedure Submit_Request (
       Obj : in out Object_Type;
-      Req :        Request.Object_Type)
+      Req :        Request.Object_Type;
+      ID  :        Snapshot_ID_Type)
    is
    begin
+      Debug.Print_String ("Submit_Request: "
+         & Debug.To_String (Debug.Uint64_Type (ID)));
       Pool.Submit_Request (
          Obj.Request_Pool_Obj,
          Req,
+         ID,
          Splitter.Number_Of_Primitives (Req));
    end Submit_Request;
 
@@ -1986,6 +2028,11 @@ is
                      --  change it in place and store it directly in the
                      --  new_PBA array.
                      --
+                     Debug.Print_String ("Gen: "
+                        & Debug.To_String (Debug.Uint64_Type (Gen)) & " "
+                        & "Cur_Gen: "
+                        & Debug.To_String (Debug.Uint64_Type (Obj.Cur_Gen))
+                        & " ");
                      if Gen = Obj.Cur_Gen or else Gen = 0 then
 
                         New_PBAs (Tree_Level_Index_Type (I - 1)) :=
@@ -2002,13 +2049,29 @@ is
 
                         Free_Blocks := Free_Blocks + 1;
                         New_Blocks  := New_Blocks  + 1;
+
+                        Debug.Print_String ("New_Blocks: "
+                           & Debug.To_String (Debug.Uint64_Type (New_Blocks))
+                           & " Free_PBA: "
+                           & Debug.To_String (Debug.Uint64_Type (
+                              Free_PBAs (Free_Blocks))) & " "
+                           & Debug.To_String (Debug.Uint64_Type (
+                              Old_PBAs (Natural (I - 1)).PBA))
+                              );
                      end if;
                   end Declare_Generation;
                end Declare_Cache_Idx;
             end loop;
 
+            Debug.Print_String ("Snap.Gen: "
+               & Debug.To_String (Debug.Uint64_Type (Snap.Gen)) & " "
+               & "Cur_Gen: "
+               & Debug.To_String (Debug.Uint64_Type (Obj.Cur_Gen))
+               & " ");
             --  check root node
-            if Snap.Gen = Obj.Cur_Gen or else Snap.Gen = 0 then
+            --  if Snap.Gen = Obj.Cur_Gen or else Snap.Gen = 0 then
+            --  XXX y?
+            if Snap.Gen = 0 then
                New_PBAs (Tree_Level_Index_Type (Trans_Height - 1)) :=
                   Old_PBAs (Natural (Trans_Height - 1)).PBA;
             else
@@ -2025,6 +2088,8 @@ is
             --  on theCurr generation.
             --
             if New_Blocks > 0 then
+               Debug.Print_String ("New_Blocks: " & Debug.To_String (
+                  Debug.Uint64_Type (New_Blocks)));
                Free_Tree.Submit_Request (
                   Obj         => Obj.Free_Tree_Obj,
                   Curr_Gen    => Obj.Cur_Gen,

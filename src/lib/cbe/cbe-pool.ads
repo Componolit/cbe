@@ -43,6 +43,7 @@ is
    procedure Submit_Request (
       Obj         : in out Object_Type;
       Req         :        Request.Object_Type;
+      ID          :        Snapshot_ID_Type;
       Nr_Of_Prims :        Number_Of_Primitives_Type);
 
    --
@@ -82,6 +83,14 @@ is
       Tag : Tag_Type)
    return Request.Object_Type;
 
+   --
+   --  Snap_ID_For_Request
+   --
+   function Snap_ID_For_Request (
+      Obj : Object_Type;
+      Req : Request.Object_Type)
+   return Snapshot_ID_Type;
+
 private
 
    --
@@ -111,6 +120,7 @@ private
       --
       function Pending_Object (
          Rq               : Request.Object_Type;
+         ID               : Snapshot_ID_Type;
          Nr_Of_Prims      : Number_Of_Primitives_Type;
          Nr_Of_Done_Prims : Number_Of_Primitives_Type)
       return Item_Type;
@@ -124,6 +134,7 @@ private
       function In_Progress (Obj : Item_Type) return Boolean;
       function Complete   (Obj : Item_Type) return Boolean;
       function Req        (Obj : Item_Type) return Request.Object_Type;
+      function Snap_ID    (Obj : Item_Type) return Snapshot_ID_Type;
 
       procedure State (
          Obj : in out Item_Type;
@@ -141,6 +152,7 @@ private
       type Item_Type is record
          State            : State_Type;
          Req              : Request.Object_Type;
+         Snap_ID          : Snapshot_ID_Type;
          Nr_Of_Prims      : Number_Of_Primitives_Type;
          Nr_Of_Done_Prims : Number_Of_Primitives_Type;
       end record;

@@ -251,7 +251,7 @@ class Cbe::Main : Rpc_object<Typed_root<Block::Session>>
 					}
 
 					Cbe::Request req = convert_to(request);
-					_cbe->submit_client_request(req);
+					_cbe->submit_client_request(req, 0);
 
 					if (_show_progress || _show_if_progress) {
 						log("\033[35m", "> NEW request: ", req);

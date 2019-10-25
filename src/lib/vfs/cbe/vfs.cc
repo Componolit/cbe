@@ -314,7 +314,7 @@ class Vfs_cbe::Wrapper
 			};
 		}
 
-		void handle_request(Cbe::Request *vfs_request)
+		void handle_request(Cbe::Request *vfs_request, uint32_t snap_id)
 		{
 			bool progress = false;
 
@@ -329,7 +329,7 @@ class Vfs_cbe::Wrapper
 				}
 
 				if (_cbe->client_request_acceptable() && _state == NONE) {
-					_cbe->submit_client_request(request);
+					_cbe->submit_client_request(request, snap_id);
 					_state = PENDING;
 					progress = true;
 				}
@@ -506,7 +506,7 @@ class Vfs_cbe::Wrapper
 			}
 
 			_cbe->start_sealing_generation();
-			handle_request(nullptr);
+			handle_request(nullptr, 0);
 		}
 
 		bool is_securing_superblock()
@@ -525,7 +525,7 @@ class Vfs_cbe::Wrapper
 			}
 
 			_cbe->start_securing_superblock();
-			handle_request(nullptr);
+			handle_request(nullptr, 0);
 		}
 
 		bool is_discarding_snapshot()
@@ -545,7 +545,7 @@ class Vfs_cbe::Wrapper
 			}
 
 			// _cbe->start_discarding_snapshot(id);
-			handle_request(nullptr);
+			handle_request(nullptr, 0);
 		}
 
 		void active_snapshot_ids(Cbe::Active_snapshot_ids &ids)
@@ -554,7 +554,7 @@ class Vfs_cbe::Wrapper
 				_initialize_cbe();
 			}
 			_cbe->active_snapshot_ids(ids);
-			handle_request(nullptr);
+			handle_request(nullptr, 0);
 		}
 
 		uint32_t _snapshot_creation_id { 0 };
@@ -569,7 +569,7 @@ class Vfs_cbe::Wrapper
 			_snapshot_creation_id = _cbe->create_snapshot(quaratine);
 			LOG("_snapshot_creation_id: ", _snapshot_creation_id,
 			    " quaratine: ", quaratine);
-			handle_request(nullptr);
+			handle_request(nullptr, 0);
 		}
 
 		bool snapshot_creation_complete() const
@@ -591,20 +591,23 @@ class Vfs_cbe::Data_file_system : public Single_file_system
 	private:
 
 		Wrapper &_w;
+		uint32_t _snap_id;
 
 	public:
 
 		struct Vfs_handle : Single_vfs_handle
 		{
 			Wrapper &_w;
+			uint32_t _snap_id { 0 };
 
 			Vfs_handle(Directory_service &ds,
 			           File_io_service   &fs,
 			           Genode::Allocator &alloc,
-			           Wrapper       &w)
+			           Wrapper       &w,
+			           uint32_t snap_id)
 			:
 				Single_vfs_handle(ds, fs, alloc, 0),
-				_w(w)
+				_w(w), _snap_id(snap_id)
 			{ }
 
 
@@ -627,7 +630,7 @@ class Vfs_cbe::Data_file_system : public Single_file_system
 					return READ_ERR_IO;
 				}
 
-				_w.handle_request(&request);
+				_w.handle_request(&request, _snap_id);
 
 				// Wrapper const & const_w = _w;
 				// (void)const_w.snapshot_creation_complete();
@@ -673,7 +676,7 @@ class Vfs_cbe::Data_file_system : public Single_file_system
 					_w._state = Wrapper::Request_state::NONE;
 					return WRITE_ERR_IO;
 				}
-				_w.handle_request(&request);
+				_w.handle_request(&request, _snap_id);
 
 				/* retry on next I/O signal */
 				if (_w._state == Wrapper::Request_state::PENDING) {
@@ -699,11 +702,11 @@ class Vfs_cbe::Data_file_system : public Single_file_system
 			bool read_ready() override { return true; }
 		};
 
-		Data_file_system(Wrapper &w)
+		Data_file_system(Wrapper &w, uint32_t snap_id)
 		:
 			Single_file_system(NODE_TYPE_BLOCK_DEVICE, type_name(),
 			                   Xml_node("<data/>")),
-			_w(w)
+			_w(w), _snap_id(snap_id)
 		{ }
 
 
@@ -755,7 +758,7 @@ class Vfs_cbe::Data_file_system : public Single_file_system
 			}
 
 			*out_handle =
-				new (alloc) Vfs_handle(*this, *this, alloc, _w);
+				new (alloc) Vfs_handle(*this, *this, alloc, _w, _snap_id);
 
 			return OPEN_OK;
 		}
@@ -1319,9 +1322,10 @@ struct Vfs_cbe::Snapshot_local_factory : File_system_factory
 	Info_file_system  _info_fs;
 
 	Snapshot_local_factory(Vfs::Env    &env,
-	                       Wrapper &cbe)
+	                       Wrapper &cbe,
+	                       uint32_t snap_id)
 	:
-		_block_fs(cbe), _info_fs(cbe, Info_file_system::Info_type::SNAPSHOT)
+		_block_fs(cbe, snap_id), _info_fs(cbe, Info_file_system::Info_type::SNAPSHOT)
 	{
 	}
 
@@ -1376,7 +1380,7 @@ class Vfs_cbe::Snapshot_file_system : private Snapshot_local_factory,
 		                    Genode::uint32_t  snap_id,
 		                    bool              readonly = false)
 		:
-			Snapshot_local_factory(vfs_env, cbe),
+			Snapshot_local_factory(vfs_env, cbe, snap_id),
 			Vfs::Dir_file_system(vfs_env,
 			                     Xml_node(_config(snap_id, readonly).string()),
 			                     *this),

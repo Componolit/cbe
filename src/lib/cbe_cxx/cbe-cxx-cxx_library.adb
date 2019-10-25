@@ -111,10 +111,12 @@ is
 
    procedure Submit_Request (
       Obj : in out Library.Object_Type;
-      Req :        CXX_Request_Type)
+      Req :        CXX_Request_Type;
+      ID  :        CXX_Snapshot_ID_Type)
    is
    begin
-      Library.Submit_Request (Obj, CXX_Request_To_SPARK (Req));
+      Library.Submit_Request (Obj, CXX_Request_To_SPARK (Req),
+         Snapshot_ID_Type (ID));
    end Submit_Request;
 
    function Peek_Completed_Request (Obj : Library.Object_Type)

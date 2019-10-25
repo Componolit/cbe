@@ -115,7 +115,7 @@ class Cbe::Library : public Cbe::Spark_object<216648>
 	 *
 	 * \param request  block request
 	 */
-	void submit_client_request(Request const &request);
+	void submit_client_request(Request const &request, uint32_t id);
 
 	/**
 	 * Check for any completed request
