@@ -8,6 +8,7 @@
 
 pragma Ada_2012;
 
+with CBE.Debug;
 with CBE.Request;
 with SHA256_4K;
 
@@ -176,6 +177,20 @@ is
                Node_Block : Type_I_Node_Block_Type
                with Address => Update_Data'Address;
             begin
+               Debug.Print_String ("Update: "
+                  & "PBA: "
+                  & Debug.To_String (Debug.Uint64_Type (
+                     Node_Block (Natural (Index)).PBA))
+                  & " -> "
+                  & Debug.To_String (Debug.Uint64_Type (
+                     Child_Update_PBA))
+                  & " Gen: "
+                  & Debug.To_String (Debug.Uint64_Type (
+                     Node_Block (Natural (Index)).Gen))
+                  & " -> "
+                  & Debug.To_String (Debug.Uint64_Type (
+                     Obj.New_Generation)));
+
                Node_Block (Natural (Index)).PBA  := Child_Update_PBA;
                Node_Block (Natural (Index)).Gen  := Obj.New_Generation;
                Node_Block (Natural (Index)).Hash := Child_Hash;
