@@ -1272,6 +1272,8 @@ is
 
                   Obj.Superblocks (Obj.Cur_SB).Snapshots (Next_Snap) :=
                   Obj.Superblocks (Obj.Cur_SB).Snapshots (Curr_Snap (Obj));
+                  Obj.Superblocks (Obj.Cur_SB).Snapshots (
+                     Next_Snap).Flags := 0;
 
                   Obj.Superblocks (Obj.Cur_SB).Snapshots (Next_Snap).Gen :=
                      Obj.Cur_Gen;
