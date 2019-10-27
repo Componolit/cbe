@@ -329,6 +329,46 @@ is
       Obj.Front_End_Req_Prim      := Request_Primitive_Invalid;
       Obj.Back_End_Req_Prim       := Request_Primitive_Invalid;
 
+      Obj.Creating_Snapshot           := False;
+      Obj.Creating_Quaratine_Snapshot := False;
+      Obj.Next_Snapshot_Id            := 0;
+      Obj.Stall_Snapshot_Creation     := False;
+
+      Debug.Print_String ("Initial SB state: ");
+      for J in Superblocks_Index_Type loop
+         if J = Obj.Cur_SB then
+            Debug.Print_String ("--- CURRENT ---");
+         end if;
+         Debug.Print_String ("SB: " & Debug.To_String (
+            Debug.Uint64_Type (J)) & " "
+            & " Curr_Snap: " & Debug.To_String (Debug.Uint64_Type (
+               Obj.Superblocks (J).Curr_Snap)));
+         for I in Snapshots_Index_Type loop
+            if Snapshot_Valid (Obj.Superblocks (J).Snapshots (I))
+            then
+               Debug.Print_String ("SB: "
+                  & Debug.To_String (Debug.Uint64_Type (J)) & " "
+                  & "SN: "
+                  & Debug.To_String (Debug.Uint64_Type (I)) & " "
+                  & "PBA: "
+                  & Debug.To_String (Debug.Uint64_Type (
+                     Obj.Superblocks (J).Snapshots (I).PBA)) & " "
+                  & "GEN: "
+                  & Debug.To_String (Debug.Uint64_Type (
+                     Obj.Superblocks (J).Snapshots (I).Gen)) & " "
+                  & "ID: "
+                  & Debug.To_String (Debug.Uint64_Type (
+                     Obj.Superblocks (J).Snapshots (I).ID)) & " "
+                  & "KEEP: "
+                  & Debug.To_String (Debug.Uint64_Type (
+                     Obj.Superblocks (J).Snapshots (I).Flags)) & " "
+                  & Debug.To_String (
+                     Obj.Superblocks (J).Snapshots (I).Hash) & " "
+                  );
+            end if;
+         end loop;
+      end loop;
+
    end Initialize_Object;
 
    function Curr_Snap (Obj : Object_Type)
@@ -432,10 +472,13 @@ is
       PBA : constant Physical_Block_Address_Type :=
          Write_Back.Peek_Completed_Root (Obj.Write_Back_Obj, Prim);
    begin
+      Debug.Print_String ("Before Update_Snapshot_Hash: "
+         & "PBA: " & Debug.To_String (Debug.Uint64_Type (Snap.PBA)) & " "
+         & "GEN: " & Debug.To_String (Debug.Uint64_Type (Snap.Gen)) & " ");
       Snap.Gen := Obj.Cur_Gen;
       Snap.PBA := PBA;
 
-      Debug.Print_String ("Update_Snapshot_Hash: "
+      Debug.Print_String ("After Update_Snapshot_Hash: "
          & "PBA: " & Debug.To_String (Debug.Uint64_Type (Snap.PBA)) & " "
          & "GEN: " & Debug.To_String (Debug.Uint64_Type (Snap.Gen)) & " ");
 
@@ -460,7 +503,9 @@ is
       --  Snapshot handling  --
       -------------------------
 
-      if Obj.Creating_Snapshot then
+      if Obj.Creating_Snapshot and then
+         not Obj.Stall_Snapshot_Creation
+      then
          Debug.Print_String ("Creating_Snapshot: " &
             Debug.To_String (Obj.Creating_Snapshot));
          Create_Snapshot_Internal (Obj, Progress);
@@ -564,6 +609,7 @@ is
 
             --  FIXME
             Virtual_Block_Device.Trans_Resume_Translation (Obj.VBD);
+            Obj.Stall_Snapshot_Creation := False;
             Free_Tree.Drop_Completed_Primitive (Obj.Free_Tree_Obj, Prim);
 
          end Declare_Prim_1;
@@ -985,6 +1031,7 @@ is
          --        is not a good idea
          --
          Virtual_Block_Device.Trans_Resume_Translation (Obj.VBD);
+         Obj.Stall_Snapshot_Creation := False;
 
       end loop Loop_WB_Completed_Prims;
 
@@ -1275,8 +1322,8 @@ is
                   Obj.Superblocks (Obj.Cur_SB).Snapshots (
                      Next_Snap).Flags := 0;
 
-                  Obj.Superblocks (Obj.Cur_SB).Snapshots (Next_Snap).Gen :=
-                     Obj.Cur_Gen;
+                  --  Obj.Superblocks (Obj.Cur_SB).Snapshots (Next_Snap).Gen :=
+                  --     Obj.Cur_Gen;
                   Obj.Superblocks (Obj.Cur_SB).Snapshots (Next_Snap).ID :=
                      Snapshot_ID_Storage_Type (Obj.Next_Snapshot_Id);
 
@@ -2022,6 +2069,8 @@ is
                      with Address => Obj.Cache_Data (Idx)'Address;
 
                      Gen : constant Generation_Type := Node (Natural (ID)).Gen;
+                     Npba : constant Physical_Block_Address_Type := Node (
+                        Natural (ID)).PBA;
                   begin
                      --
                      --  In case the generation of the entry is the same as the
@@ -2030,11 +2079,15 @@ is
                      --  change it in place and store it directly in the
                      --  new_PBA array.
                      --
-                     Debug.Print_String ("Gen: "
+                     Debug.Print_String ("PBA: "
+                        & Debug.To_String (Debug.Uint64_Type (PBA)) & " "
+                        & "Gen: "
                         & Debug.To_String (Debug.Uint64_Type (Gen)) & " "
                         & "Cur_Gen: "
                         & Debug.To_String (Debug.Uint64_Type (Obj.Cur_Gen))
-                        & " ");
+                        & " Npba: "
+                        & Debug.To_String (Debug.Uint64_Type (Npba)) & " "
+                        );
                      if Gen = Obj.Cur_Gen or else Gen = 0 then
 
                         New_PBAs (Tree_Level_Index_Type (I - 1)) :=
@@ -2069,14 +2122,24 @@ is
                & Debug.To_String (Debug.Uint64_Type (Snap.Gen)) & " "
                & "Cur_Gen: "
                & Debug.To_String (Debug.Uint64_Type (Obj.Cur_Gen))
-               & " ");
+               & " root PBA: "
+               & Debug.To_String (Debug.Uint64_Type (
+                  Old_PBAs (Natural (Trans_Height - 1)).PBA))
+               & " Gen: "
+               & Debug.To_String (Debug.Uint64_Type (
+                  Old_PBAs (Natural (Trans_Height - 1)).Gen))
+                  );
             --  check root node
-            --  if Snap.Gen = Obj.Cur_Gen or else Snap.Gen = 0 then
+            if Old_PBAs (Natural (Trans_Height - 1)).Gen = Obj.Cur_Gen or else
+               Snap.Gen = 0
+            then
+               Debug.Print_String ("Change root PBA in place");
             --  XXX y?
-            if Snap.Gen = 0 then
+            --  if Snap.Gen = 0 then
                New_PBAs (Tree_Level_Index_Type (Trans_Height - 1)) :=
                   Old_PBAs (Natural (Trans_Height - 1)).PBA;
             else
+               Debug.Print_String ("New root PBA");
                Free_PBAs (Free_Blocks) :=
                   Old_PBAs (Natural (Trans_Height - 1)).PBA;
                Free_Blocks := Free_Blocks + 1;
@@ -2137,6 +2200,7 @@ is
             --  the same branch are serialized.)
             --
             Virtual_Block_Device.Trans_Inhibit_Translation (Obj.VBD);
+            Obj.Stall_Snapshot_Creation := True;
             Progress := True;
             return;
          end Declare_Old_PBAs;

@@ -386,6 +386,7 @@ private
       Creating_Snapshot       : Boolean;
       Creating_Quaratine_Snapshot : Boolean;
       Next_Snapshot_Id        : Snapshot_ID_Type;
+      Stall_Snapshot_Creation : Boolean;
    end record;
 
    procedure Discard_Snapshot (
